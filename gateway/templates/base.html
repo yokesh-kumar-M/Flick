@@ -85,6 +85,7 @@
     <canvas id="particleCanvas"></canvas>
 
     <!-- Navigation — Translucent Glass Bar -->
+    {% block navbar %}
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
@@ -154,6 +155,7 @@
             </button>
         </div>
     </nav>
+    {% endblock %}
 
     <!-- Main Content -->
     <main class="main-content" id="mainContent">
@@ -161,6 +163,7 @@
     </main>
 
     <!-- Footer -->
+    {% block footer %}
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-brand">
@@ -170,7 +173,7 @@
                     style="background:var(--gradient-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;font-size:var(--font-size-xl);">Flick</span>
                 <p class="footer-tagline">Cinema in Space</p>
             </div>
-            <div class="footer-links">
+            <div class="footer-links" id="footerLinks">
                 <a href="/browse/">Browse</a>
                 <a href="/search/">Search</a>
                 <a href="/profile/">Profile</a>
@@ -180,6 +183,7 @@
             </div>
         </div>
     </footer>
+    {% endblock %}
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
@@ -206,7 +210,7 @@
                 const services = ['auth', 'catalog', 'access', 'streaming', 'recommendations', 'notifications'];
                 services.forEach(service => {
                     fetch(`/proxy/${service}/health/`, { method: 'GET', keepalive: true })
-                        .catch(() => {}); // silent fail so it doesn't spam console if a service is actively starting
+                        .catch(() => { }); // silent fail so it doesn't spam console if a service is actively starting
                 });
             }, 10000);
         });
