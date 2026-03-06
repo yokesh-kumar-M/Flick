@@ -10,6 +10,8 @@ COPY . .
 WORKDIR /app/auth_service
 
 RUN python manage.py collectstatic --noinput 2>/dev/null || true
+RUN python manage.py migrate
+RUN python manage.py seed_users
 
 EXPOSE 8001
 
