@@ -139,29 +139,29 @@ services:
         fromService:
           type: web
           name: flick-auth-service
-          property: url
+          property: hostport
       - key: CATALOG_SERVICE_URL
         fromService:
           type: web
           name: flick-catalog-service
-          property: url
+          property: hostport
       - key: ACCESS_SERVICE_URL
         fromService:
           type: web
           name: flick-access-service
-          property: url
+          property: hostport
       - key: STREAMING_SERVICE_URL
         fromService:
           type: web
           name: flick-streaming-service
-          property: url
+          property: hostport
       - key: RECOMMENDATION_SERVICE_URL
         fromService:
           type: web
           name: flick-recommendation-service
-          property: url
+          property: hostport
       - key: NOTIFICATION_SERVICE_URL
         fromService:
           type: web
           name: flick-notification-service
-          property: url
+          property: hostport

@@ -8,14 +8,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Service registry
+def _ensure_http(url):
+    return url if url.startswith('http') else f'http://{url}'
+
 SERVICE_URLS = {
-    'gateway': os.environ.get('GATEWAY_URL', 'http://localhost:8000'),
-    'auth': os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001'),
-    'catalog': os.environ.get('CATALOG_SERVICE_URL', 'http://localhost:8002'),
-    'access': os.environ.get('ACCESS_SERVICE_URL', 'http://localhost:8003'),
-    'streaming': os.environ.get('STREAMING_SERVICE_URL', 'http://localhost:8004'),
-    'recommendation': os.environ.get('RECOMMENDATION_SERVICE_URL', 'http://localhost:8005'),
-    'notification': os.environ.get('NOTIFICATION_SERVICE_URL', 'http://localhost:8006'),
+    'gateway': _ensure_http(os.environ.get('GATEWAY_URL', 'http://localhost:8000')),
+    'auth': _ensure_http(os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001')),
+    'catalog': _ensure_http(os.environ.get('CATALOG_SERVICE_URL', 'http://localhost:8002')),
+    'access': _ensure_http(os.environ.get('ACCESS_SERVICE_URL', 'http://localhost:8003')),
+    'streaming': _ensure_http(os.environ.get('STREAMING_SERVICE_URL', 'http://localhost:8004')),
+    'recommendation': _ensure_http(os.environ.get('RECOMMENDATION_SERVICE_URL', 'http://localhost:8005')),
+    'notification': _ensure_http(os.environ.get('NOTIFICATION_SERVICE_URL', 'http://localhost:8006')),
 }
 
 # Connection pooling

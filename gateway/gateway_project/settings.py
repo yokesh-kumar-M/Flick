@@ -87,12 +87,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Service URLs for API proxy
-AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001')
-CATALOG_SERVICE_URL = os.environ.get('CATALOG_SERVICE_URL', 'http://localhost:8002')
-ACCESS_SERVICE_URL = os.environ.get('ACCESS_SERVICE_URL', 'http://localhost:8003')
-STREAMING_SERVICE_URL = os.environ.get('STREAMING_SERVICE_URL', 'http://localhost:8004')
-RECOMMENDATION_SERVICE_URL = os.environ.get('RECOMMENDATION_SERVICE_URL', 'http://localhost:8005')
-NOTIFICATION_SERVICE_URL = os.environ.get('NOTIFICATION_SERVICE_URL', 'http://localhost:8006')
+def _ensure_http(url):
+    return url if url.startswith('http') else f'http://{url}'
+
+AUTH_SERVICE_URL = _ensure_http(os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001'))
+CATALOG_SERVICE_URL = _ensure_http(os.environ.get('CATALOG_SERVICE_URL', 'http://localhost:8002'))
+ACCESS_SERVICE_URL = _ensure_http(os.environ.get('ACCESS_SERVICE_URL', 'http://localhost:8003'))
+STREAMING_SERVICE_URL = _ensure_http(os.environ.get('STREAMING_SERVICE_URL', 'http://localhost:8004'))
+RECOMMENDATION_SERVICE_URL = _ensure_http(os.environ.get('RECOMMENDATION_SERVICE_URL', 'http://localhost:8005'))
+NOTIFICATION_SERVICE_URL = _ensure_http(os.environ.get('NOTIFICATION_SERVICE_URL', 'http://localhost:8006'))
 
 import sys
 sys.path.insert(0, str(BASE_DIR.parent / 'shared'))
