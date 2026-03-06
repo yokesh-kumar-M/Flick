@@ -100,14 +100,17 @@ def proxy_view(request, service, path=''):
         )
 
         # Forward cookies from service response
+        import time
         for cookie in resp.cookies:
-            if not cookie.value or cookie.get('max-age') == 0 or (cookie.expires and cookie.expires < 0):
+            if not cookie.value or (cookie.expires and cookie.expires < 0):
                 django_response.delete_cookie(cookie.name, path='/', samesite='Lax')
             else:
+                # Safely calculate max-age from expires if it exists
+                max_age = max(0, int(cookie.expires - time.time())) if cookie.expires else 86400
                 django_response.set_cookie(
                     cookie.name, cookie.value,
                     httponly=True, samesite='Lax', path='/',
-                    max_age=cookie.get('max-age') or 86400
+                    max_age=max_age
                 )
 
         return django_response
