@@ -12,6 +12,7 @@ if not _secret:
     _secret = 'gateway-service-dev-secret-key-NOT-FOR-PRODUCTION'
 SECRET_KEY = _secret
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS.append('.vercel.app')
 env_render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if env_render_host:
     ALLOWED_HOSTS.append(env_render_host)
