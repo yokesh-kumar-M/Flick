@@ -144,7 +144,7 @@
                 </div>
 
                 <!-- Auth Buttons (when not logged in) -->
-                <div class="nav-auth" id="authButtons">
+                <div class="nav-auth" id="authButtons" style="display:none;">
                     <a href="/login/" class="btn btn-ghost">Sign In</a>
                     <a href="/register/" class="btn btn-primary">Sign Up</a>
                 </div>
@@ -205,14 +205,14 @@
             initNavbar();
             initParticles();
 
-            // 10-second backend keep-alive beacon
+            // 5-minute backend keep-alive beacon (prevents verbose logs)
             setInterval(() => {
                 const services = ['auth', 'catalog', 'access', 'streaming', 'recommendations', 'notifications'];
                 services.forEach(service => {
                     fetch(`/proxy/${service}/health/`, { method: 'GET', keepalive: true })
                         .catch(() => { }); // silent fail so it doesn't spam console if a service is actively starting
                 });
-            }, 10000);
+            }, 300000);
         });
     </script>
 </body>
