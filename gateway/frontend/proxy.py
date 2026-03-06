@@ -42,9 +42,12 @@ def proxy_view(request, service, path=''):
     if not base_url:
         return JsonResponse({'error': f'Unknown service: {service}'}, status=404)
 
-    url = f"{base_url}/api/{service}/{path}"
-    if not url.endswith('/'):
-        url += '/'
+    if path.strip('/') == 'health':
+        url = f"{base_url}/health/"
+    else:
+        url = f"{base_url}/api/{service}/{path}"
+        if not url.endswith('/'):
+            url += '/'
 
     # Forward headers
     headers = {}

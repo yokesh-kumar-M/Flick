@@ -200,6 +200,15 @@
             initAuth();
             initNavbar();
             initParticles();
+
+            // 10-second backend keep-alive beacon
+            setInterval(() => {
+                const services = ['auth', 'catalog', 'access', 'streaming', 'recommendations', 'notifications'];
+                services.forEach(service => {
+                    fetch(`/proxy/${service}/health/`, { method: 'GET', keepalive: true })
+                        .catch(() => {}); // silent fail so it doesn't spam console if a service is actively starting
+                });
+            }, 10000);
         });
     </script>
 </body>
