@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff">
+        <animate attributeName="stop-color" values="#ffffff;#a1a1aa;#ffffff" dur="4s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#71717a">
+        <animate attributeName="stop-color" values="#71717a;#d4d4d8;#71717a" dur="4s" repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="16" fill="#000000" stroke="#27272a" stroke-width="2"/>
+  
+  <!-- Subtle minimal film dots -->
+  <circle cx="15" cy="20" r="3" fill="#ffffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" repeatCount="indefinite"/></circle>
+  <circle cx="15" cy="50" r="3" fill="#ffffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" begin="0.3s" repeatCount="indefinite"/></circle>
+  <circle cx="15" cy="80" r="3" fill="#ffffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" begin="0.6s" repeatCount="indefinite"/></circle>
+  <circle cx="85" cy="20" r="3" fill="#ffffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" begin="0.6s" repeatCount="indefinite"/></circle>
+  <circle cx="85" cy="50" r="3" fill="#ffffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" begin="0.3s" repeatCount="indefinite"/></circle>
+  <circle cx="85" cy="80" r="3" fill="#ffffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" repeatCount="indefinite"/></circle>
+  
+  <!-- Play Button -->
+  <path d="M42 32 L68 50 L42 68 Z" fill="url(#logoGrad)">
+    <animateTransform attributeName="transform" type="scale" values="1;1.03;1" cx="50" cy="50" dur="2.5s" repeatCount="indefinite" />
+  </path>
+</svg>

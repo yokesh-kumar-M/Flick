@@ -1,0 +1,1375 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin CMS{% endblock %}
+
+{% block content %}
+<div class="admin-layout" id="adminLayout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="admin-sidebar-header">
+            <h2><i class="fas fa-shield-alt" style="color:var(--theme-primary);"></i> Admin CMS</h2>
+        </div>
+        <button class="admin-nav-item active" data-section="dashboard" onclick="showAdminSection('dashboard', this)">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </button>
+        <button class="admin-nav-item" data-section="movies" onclick="showAdminSection('movies', this)">
+            <i class="fas fa-film"></i> Movies
+        </button>
+        <button class="admin-nav-item" data-section="addmovie" onclick="showAdminSection('addmovie', this)">
+            <i class="fas fa-plus-circle"></i> Add Movie
+        </button>
+        <button class="admin-nav-item" data-section="users" onclick="showAdminSection('users', this)">
+            <i class="fas fa-users"></i> Users
+        </button>
+        <button class="admin-nav-item" data-section="access" onclick="showAdminSection('access', this)">
+            <i class="fas fa-key"></i> Access
+            <span class="admin-nav-badge" id="pendingBadge" style="display:none;">0</span>
+        </button>
+        <button class="admin-nav-item" data-section="payments" onclick="showAdminSection('payments', this)">
+            <i class="fas fa-credit-card"></i> Payments
+            <span class="admin-nav-badge" id="paymentBadge" style="display:none;">0</span>
+        </button>
+        <button class="admin-nav-item" data-section="genres" onclick="showAdminSection('genres', this)">
+            <i class="fas fa-tags"></i> Genres
+        </button>
+        <button class="admin-nav-item" data-section="reviews" onclick="showAdminSection('reviews', this)">
+            <i class="fas fa-star"></i> Reviews
+        </button>
+        <button class="admin-nav-item" data-section="categories" onclick="showAdminSection('categories', this)">
+            <i class="fas fa-folder"></i> Categories
+        </button>
+        <button class="admin-nav-item" data-section="playlists" onclick="showAdminSection('playlists', this)">
+            <i class="fas fa-list"></i> Playlists
+        </button>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="admin-main" id="adminMain">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <h2>⚠️ Confirm Delete</h2>
+        <p id="deleteModalText">Are you sure you want to delete this item?</p>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn btn-danger" id="deleteConfirmBtn" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let adminData = { movies: [], users: [], genres: [], categories: [], playlists: [] };
+    let editingMovieId = null;
+    let deleteCallback = null;
+
+    document.addEventListener('DOMContentLoaded', loadAdmin);
+
+    async function loadAdmin() {
+        if (!currentUser || !currentUser.is_admin) {
+            document.getElementById('adminMain').innerHTML =
+                '<p style="text-align:center;padding:80px;color:var(--theme-text-secondary);">Admin access required.</p>';
+            return;
+        }
+        showAdminSection('dashboard', document.querySelector('[data-section="dashboard"]'));
+    }
+
+    function showAdminSection(section, btn) {
+        document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const main = document.getElementById('adminMain');
+        main.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+
+        switch (section) {
+            case 'dashboard': renderDashboard(); break;
+            case 'movies': renderMoviesList(); break;
+            case 'addmovie': renderMovieForm(); break;
+            case 'users': renderUsersList(); break;
+            case 'access': renderAccessPanel(); break;
+            case 'payments': renderPaymentsPanel(); break;
+            case 'genres': renderGenresPanel(); break;
+            case 'reviews': renderReviewsPanel(); break;
+            case 'categories': renderCategoriesPanel(); break;
+            case 'playlists': renderPlaylistsPanel(); break;
+        }
+    }
+
+    // ═══════════════════════════════════════
+    // DASHBOARD
+    // ═══════════════════════════════════════
+    async function renderDashboard() {
+        const main = document.getElementById('adminMain');
+        let movieCount = 0, userCount = 0, pendingCount = 0, activeStreams = 0, pendingPayments = 0;
+
+        try {
+            const [movies, users, pending, allReqs] = await Promise.all([
+                API.catalog.movies('page_size=1'),
+                API.auth.listUsers(),
+                API.access.pending(),
+                API.access.all('')
+            ]);
+            movieCount = movies.total || 0;
+            userCount = users.length || 0;
+            pendingCount = pending.length || 0;
+            adminData.users = users;
+
+            // Count pending payments
+            pendingPayments = (allReqs || []).filter(r => r.payment_status === 'pending' && r.status === 'pending').length;
+
+            const badge = document.getElementById('pendingBadge');
+            if (pendingCount > 0) { badge.style.display = 'inline'; badge.textContent = pendingCount; }
+            const payBadge = document.getElementById('paymentBadge');
+            if (pendingPayments > 0) { payBadge.style.display = 'inline'; payBadge.textContent = pendingPayments; }
+        } catch { }
+
+        try {
+            const streamData = await API.streaming.activeStreams();
+            activeStreams = streamData.active_streams || 0;
+        } catch { }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>📊 Dashboard</h1>
+            <p style="color:var(--theme-text-secondary);font-size:var(--font-size-sm);">Overview of your platform</p>
+        </div>
+
+        <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon"><img src="/static/img/Logo/logo.svg" style="width:32px; border-radius:8px;"></div>
+                <div class="admin-stat-value">${movieCount}</div>
+                <div class="admin-stat-label">Total Movies</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon"><img src="/static/img/Logo/feelgood.svg" style="width:32px; border-radius:8px;"></div>
+                <div class="admin-stat-value">${userCount}</div>
+                <div class="admin-stat-label">Total Users</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon"><img src="/static/img/Logo/think.svg" style="width:32px; border-radius:8px;"></div>
+                <div class="admin-stat-value">${pendingCount}</div>
+                <div class="admin-stat-label">Pending Requests</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon"><img src="/static/img/Logo/intense.svg" style="width:32px; border-radius:8px;"></div>
+                <div class="admin-stat-value">${activeStreams}</div>
+                <div class="admin-stat-label">Active Streams</div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);">
+            <div class="admin-form-section">
+                <h3 style="display:flex; align-items:center; gap:8px;"><img src="/static/img/Logo/epic.svg" style="width:24px; border-radius:4px;"> Quick Actions</h3>
+                <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                    <button class="btn btn-primary" onclick="showAdminSection('addmovie', document.querySelector('[data-section=addmovie]'))">
+                        <i class="fas fa-plus"></i> Add New Movie
+                    </button>
+                    <button class="btn btn-ghost" onclick="showAdminSection('access', document.querySelector('[data-section=access]'))">
+                        <i class="fas fa-key"></i> Manage Requests (${pendingCount} pending)
+                    </button>
+                    <button class="btn btn-ghost" onclick="showAdminSection('payments', document.querySelector('[data-section=payments]'))">
+                        <i class="fas fa-credit-card"></i> Pending Payments (${pendingPayments})
+                    </button>
+                    <button class="btn btn-ghost" onclick="showAdminSection('users', document.querySelector('[data-section=users]'))">
+                        <i class="fas fa-users"></i> Manage Users
+                    </button>
+                </div>
+            </div>
+            <div class="admin-form-section">
+                <h3 style="display:flex; align-items:center; gap:8px;"><img src="/static/img/Logo/chill.svg" style="width:24px; border-radius:4px;"> Recent Users</h3>
+                <div style="display:flex;flex-direction:column;gap:var(--space-xs);">
+                    ${(adminData.users || []).slice(0, 5).map(u => `
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-sm);border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);">
+                            <span style="font-size:var(--font-size-sm);font-weight:500;">${escapeHtml(u.username)}</span>
+                            <span class="status-badge ${u.is_admin ? 'active' : ''}" style="font-size:10px;">${u.is_admin ? 'Admin' : 'User'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    }
+
+    // ═══════════════════════════════════════
+    // MOVIES LIST (CRUD)
+    // ═══════════════════════════════════════
+    async function renderMoviesList() {
+        const main = document.getElementById('adminMain');
+        try {
+            const data = await API.catalog.movies('page_size=100');
+            adminData.movies = data.results || [];
+        } catch { adminData.movies = []; }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1 style="display:flex; align-items:center; gap:12px;"><img src="/static/img/Logo/logo.svg" style="width:32px; border-radius:8px;"> Movies</h1>
+            <button class="btn btn-primary" onclick="showAdminSection('addmovie', document.querySelector('[data-section=addmovie]'))">
+                <i class="fas fa-plus"></i> Add Movie
+            </button>
+        </div>
+
+        <div class="admin-form-section" style="padding:var(--space-md);">
+            <input type="text" class="form-input" id="movieSearchInput" placeholder="Search movies..."
+                   oninput="filterAdminMovies()" style="border-radius:var(--radius-full);padding:var(--space-sm) var(--space-lg);">
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table" id="moviesTable">
+                <thead>
+                    <tr>
+                        <th>Movie</th>
+                        <th>Type</th>
+                        <th>Year</th>
+                        <th>Rating</th>
+                        <th>Views</th>
+                        <th>Featured</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="moviesTableBody">
+                    ${adminData.movies.map(m => movieRow(m)).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    }
+
+    function movieRow(m) {
+        return `
+        <tr>
+            <td>
+                <div style="display:flex;align-items:center;gap:var(--space-sm);">
+                    <img src="${escapeHtml(m.poster_display || '/static/img/default-poster.svg')}"
+                         style="width:40px;height:60px;border-radius:var(--radius-sm);object-fit:cover;">
+                    <div>
+                        <div style="font-weight:600;">${escapeHtml(m.title)}</div>
+                        <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">${escapeHtml(m.slug)}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="status-badge active">${m.content_type}</span></td>
+            <td>${m.release_year}</td>
+            <td>⭐ ${m.rating ? m.rating.toFixed(1) : '—'}</td>
+            <td>${(m.view_count || 0).toLocaleString()}</td>
+            <td>${m.is_featured ? '⭐ Yes' : '—'}</td>
+            <td>
+                <div style="display:flex;gap:var(--space-xs);">
+                    <button class="btn btn-sm btn-ghost" onclick="editMovie(${m.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="requestDeleteMovie(${m.id}, '${escapeHtml(m.title)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `;
+    }
+
+    function filterAdminMovies() {
+        const q = document.getElementById('movieSearchInput').value.toLowerCase();
+        const filtered = adminData.movies.filter(m => m.title.toLowerCase().includes(q) || m.slug.includes(q));
+        document.getElementById('moviesTableBody').innerHTML = filtered.map(m => movieRow(m)).join('');
+    }
+
+    // ═══════════════════════════════════════
+    // ADD / EDIT MOVIE FORM
+    // ═══════════════════════════════════════
+    async function renderMovieForm(movie = null) {
+        const main = document.getElementById('adminMain');
+        editingMovieId = movie ? movie.id : null;
+
+        // Load genres and categories
+        let genres = [], categories = [];
+        try { genres = await API.catalog.genres(); } catch { }
+        try { categories = await API.catalog.categories(); } catch { }
+
+        const movieGenreIds = movie ? (movie.genres || []).map(g => g.id) : [];
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>${movie ? '✏️ Edit Movie' : '➕ Add New Movie'}</h1>
+            <button class="btn btn-ghost" onclick="showAdminSection('movies', document.querySelector('[data-section=movies]'))">
+                <i class="fas fa-arrow-left"></i> Back to Movies
+            </button>
+        </div>
+
+        <form id="movieForm" onsubmit="saveMovie(event)">
+            <div class="admin-form-section">
+                <h3>📋 Basic Information</h3>
+                <div class="admin-form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" class="form-input" id="mf_title" required value="${escapeHtml(movie?.title || '')}"
+                               oninput="autoSlug()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Slug (auto-generated)</label>
+                        <input type="text" class="form-input" id="mf_slug" value="${escapeHtml(movie?.slug || '')}" placeholder="auto-generated">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input" id="mf_description" rows="4">${escapeHtml(movie?.description || '')}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Content Type</label>
+                        <select class="form-input" id="mf_content_type">
+                            <option value="movie" ${movie?.content_type === 'movie' ? 'selected' : ''}>Movie</option>
+                            <option value="series" ${movie?.content_type === 'series' ? 'selected' : ''}>Series</option>
+                            <option value="documentary" ${movie?.content_type === 'documentary' ? 'selected' : ''}>Documentary</option>
+                            <option value="short" ${movie?.content_type === 'short' ? 'selected' : ''}>Short Film</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Release Year</label>
+                        <input type="number" class="form-input" id="mf_release_year" value="${movie?.release_year || 2024}" min="1900" max="2030">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Duration (minutes)</label>
+                        <input type="number" class="form-input" id="mf_duration" value="${movie?.duration || ''}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Director</label>
+                        <input type="text" class="form-input" id="mf_director" value="${escapeHtml(movie?.director || '')}">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Cast (comma-separated)</label>
+                        <input type="text" class="form-input" id="mf_cast" value="${escapeHtml(movie?.cast || '')}" placeholder="Actor 1, Actor 2">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rating (0-10)</label>
+                        <input type="number" class="form-input" id="mf_rating" value="${movie?.rating || ''}" min="0" max="10" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Maturity Rating</label>
+                        <select class="form-input" id="mf_maturity">
+                            ${['G', 'PG', 'PG-13', 'R', 'NC-17', 'TV-MA'].map(r =>
+            `<option value="${r}" ${movie?.maturity_rating === r ? 'selected' : ''}>${r}</option>`
+        ).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-form-section">
+                <h3>🏷️ Categorization</h3>
+                <div class="admin-form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select class="form-input" id="mf_category">
+                            <option value="">— None —</option>
+                            ${categories.map(c => `<option value="${c.id}" ${movie?.category?.id === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tags (comma-separated)</label>
+                        <input type="text" class="form-input" id="mf_tags" value="${escapeHtml(movie?.tags || '')}" placeholder="tag1, tag2">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Genres</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-top:var(--space-xs);">
+                            ${genres.map(g => `
+                                <label style="display:flex;align-items:center;gap:4px;padding:var(--space-xs) var(--space-sm);
+                                    background:${movieGenreIds.includes(g.id) ? 'rgba(var(--theme-primary-rgb),0.2)' : 'rgba(255,255,255,0.03)'};
+                                    border:1px solid ${movieGenreIds.includes(g.id) ? 'rgba(var(--theme-primary-rgb),0.4)' : 'var(--glass-border)'};
+                                    border-radius:var(--radius-full);cursor:pointer;font-size:var(--font-size-xs);">
+                                    <input type="checkbox" name="genres" value="${g.id}" ${movieGenreIds.includes(g.id) ? 'checked' : ''}
+                                        style="width:14px;height:14px;">
+                                    ${escapeHtml(g.name)}
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-form-section">
+                <h3>🖼️ Media</h3>
+                <div class="admin-form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Poster URL</label>
+                        <input type="url" class="form-input" id="mf_poster_url" value="${escapeHtml(movie?.poster_url || '')}" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Backdrop URL</label>
+                        <input type="url" class="form-input" id="mf_backdrop_url" value="${escapeHtml(movie?.backdrop_url || '')}" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Trailer URL</label>
+                        <input type="url" class="form-input" id="mf_trailer_url" value="${escapeHtml(movie?.trailer_url || '')}" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Video File URL</label>
+                        <input type="url" class="form-input" id="mf_video_url" placeholder="https://... or upload below">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Upload Poster (Vertical 2:3)</label>
+                        <div class="upload-zone" id="posterDropZone" onclick="document.getElementById('posterUpload').click()"
+                             ondragover="event.preventDefault();this.classList.add('dragover')"
+                             ondragleave="this.classList.remove('dragover')"
+                             ondrop="handleDrop(event,'posterUpload')">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drop poster image here or click to browse</p>
+                            <small style="color:var(--theme-text-muted);font-size:var(--font-size-xs);margin-top:4px;display:block;">Recommended: 800x1200px (2:3 aspect ratio)</small>
+                            <input type="file" id="posterUpload" accept="image/*" style="display:none;" onchange="previewUpload(this, 'posterPreview')">
+                        </div>
+                        <img id="posterPreview" style="display:none;max-width:120px;margin-top:var(--space-sm);border-radius:var(--radius-sm);">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Upload Thumbnail (Card Preview Image)</label>
+                        <div class="upload-zone" id="thumbnailDropZone" onclick="document.getElementById('thumbnailUpload').click()"
+                             ondragover="event.preventDefault();this.classList.add('dragover')"
+                             ondragleave="this.classList.remove('dragover')"
+                             ondrop="handleDrop(event,'thumbnailUpload')">
+                            <i class="fas fa-image"></i>
+                            <p>Drop thumbnail here or click to browse</p>
+                            <small style="color:var(--theme-text-muted);font-size:var(--font-size-xs);margin-top:4px;display:block;">Smaller optimized image for cards • Falls back to poster if not uploaded</small>
+                            <input type="file" id="thumbnailUpload" accept="image/*" style="display:none;" onchange="previewUpload(this, 'thumbnailPreview')">
+                        </div>
+                        <img id="thumbnailPreview" style="display:none;max-width:120px;margin-top:var(--space-sm);border-radius:var(--radius-sm);">
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-form-section">
+                <h3>⚙️ Settings</h3>
+                <div class="admin-form-grid">
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:var(--space-sm);cursor:pointer;">
+                            <input type="checkbox" id="mf_featured" ${movie?.is_featured ? 'checked' : ''} style="width:18px;height:18px;">
+                            <span>Featured on Homepage</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:var(--space-sm);cursor:pointer;">
+                            <input type="checkbox" id="mf_requires_access" ${movie?.requires_access !== false ? 'checked' : ''} style="width:18px;height:18px;">
+                            <span>Requires Access Code</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="movieFormError" class="form-error" style="display:none;margin-bottom:var(--space-md);"></div>
+
+            <div style="display:flex;gap:var(--space-md);justify-content:flex-end;">
+                <button type="button" class="btn btn-ghost" onclick="showAdminSection('movies', document.querySelector('[data-section=movies]'))">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-lg" id="saveMovieBtn">
+                    <i class="fas fa-save"></i> ${movie ? 'Update Movie' : 'Create Movie'}
+                </button>
+            </div>
+        </form>
+    `;
+    }
+
+    function autoSlug() {
+        const title = document.getElementById('mf_title').value;
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        document.getElementById('mf_slug').value = slug;
+    }
+
+    function handleDrop(e, inputId) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const input = document.getElementById(inputId);
+            input.files = files;
+            previewUpload(input, 'posterPreview');
+        }
+    }
+
+    function previewUpload(input, previewId) {
+        const preview = document.getElementById(previewId);
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => { preview.src = e.target.result; preview.style.display = 'block'; };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function saveMovie(e) {
+        e.preventDefault();
+        const btn = document.getElementById('saveMovieBtn');
+        const errorEl = document.getElementById('movieFormError');
+        errorEl.style.display = 'none';
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+
+        const genreIds = [...document.querySelectorAll('input[name=genres]:checked')].map(c => parseInt(c.value));
+
+        // Check if files are uploaded
+        const posterFile = document.getElementById('posterUpload').files[0];
+        const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+
+        // Use FormData if files present, otherwise JSON
+        let payload, isFormData = posterFile || thumbnailFile;
+
+        if (isFormData) {
+            payload = new FormData();
+            payload.append('title', document.getElementById('mf_title').value);
+            payload.append('slug', document.getElementById('mf_slug').value);
+            payload.append('description', document.getElementById('mf_description').value);
+            payload.append('content_type', document.getElementById('mf_content_type').value);
+            payload.append('release_year', parseInt(document.getElementById('mf_release_year').value) || 2024);
+            payload.append('duration', parseInt(document.getElementById('mf_duration').value) || 0);
+            payload.append('director', document.getElementById('mf_director').value);
+            payload.append('cast', document.getElementById('mf_cast').value);
+            payload.append('rating', parseFloat(document.getElementById('mf_rating').value) || 0);
+            payload.append('maturity_rating', document.getElementById('mf_maturity').value);
+            payload.append('poster_url', document.getElementById('mf_poster_url').value);
+            payload.append('thumbnail_url', ''); // Can add thumbnail_url field to form if needed
+            payload.append('backdrop_url', document.getElementById('mf_backdrop_url').value);
+            payload.append('trailer_url', document.getElementById('mf_trailer_url').value);
+            payload.append('tags', document.getElementById('mf_tags').value);
+            const categoryId = document.getElementById('mf_category').value;
+            if (categoryId) payload.append('category', parseInt(categoryId));
+            payload.append('is_featured', document.getElementById('mf_featured').checked);
+            payload.append('requires_access', document.getElementById('mf_requires_access').checked);
+
+            // Append genre IDs as array
+            genreIds.forEach(id => payload.append('genre_ids', id));
+
+            // Append files
+            if (posterFile) payload.append('poster', posterFile);
+            if (thumbnailFile) payload.append('thumbnail', thumbnailFile);
+        } else {
+            payload = {
+                title: document.getElementById('mf_title').value,
+                slug: document.getElementById('mf_slug').value,
+                description: document.getElementById('mf_description').value,
+                content_type: document.getElementById('mf_content_type').value,
+                release_year: parseInt(document.getElementById('mf_release_year').value) || 2024,
+                duration: parseInt(document.getElementById('mf_duration').value) || 0,
+                director: document.getElementById('mf_director').value,
+                cast: document.getElementById('mf_cast').value,
+                rating: parseFloat(document.getElementById('mf_rating').value) || 0,
+                maturity_rating: document.getElementById('mf_maturity').value,
+                poster_url: document.getElementById('mf_poster_url').value,
+                backdrop_url: document.getElementById('mf_backdrop_url').value,
+                trailer_url: document.getElementById('mf_trailer_url').value,
+                tags: document.getElementById('mf_tags').value,
+                category: document.getElementById('mf_category').value ? parseInt(document.getElementById('mf_category').value) : null,
+                genre_ids: genreIds,
+                is_featured: document.getElementById('mf_featured').checked,
+                requires_access: document.getElementById('mf_requires_access').checked,
+            };
+        }
+
+        try {
+            if (editingMovieId) {
+                // For updates with FormData, need special handling
+                if (isFormData) {
+                    const response = await fetch(`${API.baseUrl}/catalog/movies/${editingMovieId}/update/`, {
+                        method: 'PATCH',
+                        credentials: 'include',
+                        body: payload,
+                    });
+                    if (!response.ok) throw await response.json().catch(() => ({ error: 'Update failed' }));
+                } else {
+                    await API.catalog.updateMovie(editingMovieId, payload);
+                }
+                showToast('Movie updated! ✅', 'success');
+            } else {
+                // For create with FormData
+                if (isFormData) {
+                    const response = await fetch(`${API.baseUrl}/catalog/movies/create/`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: payload,
+                    });
+                    if (!response.ok) throw await response.json().catch(() => ({ error: 'Creation failed' }));
+                } else {
+                    await API.catalog.createMovie(payload);
+                }
+                showToast('Movie created! <img src="/static/img/Logo/logo.svg" style="width:20px; vertical-align:middle; border-radius:4px;">', 'success');
+            }
+            showAdminSection('movies', document.querySelector('[data-section=movies]'));
+        } catch (err) {
+            const msg = typeof err === 'object' ? (err.error || JSON.stringify(err)) : err;
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+            btn.innerHTML = `<i class="fas fa-save"></i> ${editingMovieId ? 'Update' : 'Create'} Movie`;
+            btn.disabled = false;
+        }
+    }
+
+    async function editMovie(id) {
+        try {
+            // Find movie by searching all movies
+            const data = await API.catalog.movies(`page_size=200`);
+            const movie = (data.results || []).find(m => m.id === id);
+            if (movie) {
+                // Get full detail
+                const detail = await API.catalog.movie(movie.slug);
+                renderMovieForm(detail.movie);
+                document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+                document.querySelector('[data-section=addmovie]')?.classList.add('active');
+            }
+        } catch (err) { showToast('Failed to load movie', 'error'); }
+    }
+
+    function requestDeleteMovie(id, title) {
+        document.getElementById('deleteModalText').textContent = `Delete "${title}"? This will deactivate the movie.`;
+        document.getElementById('deleteModal').classList.add('active');
+        deleteCallback = async () => {
+            try {
+                await API.catalog.deleteMovie(id);
+                showToast('Movie deleted', 'info');
+                showAdminSection('movies', document.querySelector('[data-section=movies]'));
+            } catch (err) { showToast('Failed to delete', 'error'); }
+        };
+    }
+
+    function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('active'); deleteCallback = null; }
+    function confirmDelete() { if (deleteCallback) deleteCallback(); closeDeleteModal(); }
+
+    // ═══════════════════════════════════════
+    // USERS LIST
+    // ═══════════════════════════════════════
+    async function renderUsersList() {
+        const main = document.getElementById('adminMain');
+        try { adminData.users = await API.auth.listUsers(); } catch { adminData.users = []; }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>👥 Users</h1>
+            <span style="color:var(--theme-text-secondary);font-size:var(--font-size-sm);">${adminData.users.length} total</span>
+        </div>
+
+        <div class="admin-table-wrap">
+            <div class="admin-table-header">
+                <h3>All Users</h3>
+                <input type="text" class="form-input" placeholder="Search users..." style="width:250px;padding:var(--space-xs) var(--space-md);border-radius:var(--radius-full);font-size:var(--font-size-sm);"
+                       oninput="filterAdminUsers(this.value)">
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>User</th><th>Email</th><th>Role</th><th>Access</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    ${adminData.users.map(u => userRow(u)).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    }
+
+    function filterAdminUsers(q) {
+        q = q.toLowerCase();
+        const filtered = adminData.users.filter(u =>
+            u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) ||
+            (u.display_name || '').toLowerCase().includes(q)
+        );
+        document.getElementById('usersTableBody').innerHTML = filtered.map(u => userRow(u)).join('');
+    }
+
+    function userRow(u) {
+        return `
+        <tr>
+            <td style="font-weight:600;">${escapeHtml(u.display_name || u.username)}</td>
+            <td style="color:var(--theme-text-secondary);">${escapeHtml(u.email)}</td>
+            <td><span class="status-badge ${u.is_admin ? 'active' : ''}">${u.is_admin ? 'Admin' : 'User'}</span></td>
+            <td>
+                ${u.has_super_access
+                    ? '<span class="status-badge" style="background:rgba(139,92,246,0.15);color:#8b5cf6;"><i class="fas fa-crown"></i> Super</span>'
+                    : '<span style="color:var(--theme-text-muted);font-size:var(--font-size-xs);">Standard</span>'
+                }
+            </td>
+            <td><span class="status-badge ${u.is_active ? 'approved' : 'denied'}">${u.is_active ? 'Active' : 'Banned'}</span></td>
+            <td style="color:var(--theme-text-muted);font-size:var(--font-size-xs);">${new Date(u.created_at).toLocaleDateString()}</td>
+            <td>
+                <div style="display:flex;gap:var(--space-xs);">
+                    <button class="btn btn-sm btn-ghost" onclick="toggleUserAdmin(${u.id})" title="${u.is_admin ? 'Remove Admin' : 'Make Admin'}">
+                        <i class="fas fa-${u.is_admin ? 'user-minus' : 'user-shield'}"></i>
+                    </button>
+                    <button class="btn btn-sm ${u.has_super_access ? 'btn-primary' : 'btn-ghost'}" onclick="toggleSuperAccess(${u.id})" title="${u.has_super_access ? 'Revoke Super Access' : 'Grant Super Access'}">
+                        <i class="fas fa-crown"></i>
+                    </button>
+                    <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-primary'}" onclick="toggleUserBan(${u.id})" title="${u.is_active ? 'Ban User' : 'Unban User'}">
+                        <i class="fas fa-${u.is_active ? 'ban' : 'check-circle'}"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+    }
+
+    async function toggleUserAdmin(userId) {
+        try {
+            const result = await API.auth.toggleAdmin(userId);
+            showToast(result.message, 'success');
+            renderUsersList();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    async function toggleUserBan(userId) {
+        try {
+            const result = await API.auth.banUser(userId);
+            showToast(result.message, 'success');
+            renderUsersList();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    async function toggleSuperAccess(userId) {
+        try {
+            const result = await API.auth.toggleSuperAccess(userId);
+            showToast(result.message, 'success');
+            renderUsersList();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    // ═══════════════════════════════════════
+    // ACCESS MANAGEMENT
+    // ═══════════════════════════════════════
+    async function renderAccessPanel() {
+        const main = document.getElementById('adminMain');
+        let pending = [], all = [];
+        try { pending = await API.access.pending(); } catch { }
+        try { all = await API.access.all(''); } catch { }
+
+        const badge = document.getElementById('pendingBadge');
+        if (pending.length > 0) { badge.style.display = 'inline'; badge.textContent = pending.length; }
+        else { badge.style.display = 'none'; }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>🔐 Access Control</h1>
+        </div>
+
+        ${pending.length > 0 ? `
+        <div class="admin-form-section" style="border-left:3px solid var(--theme-accent);">
+            <h3>⏳ Pending Requests (${pending.length})</h3>
+            <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                ${pending.map(r => `
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-md);
+                        background:rgba(255,255,255,0.02);border-radius:var(--radius-md);">
+                        <div>
+                            <div style="font-weight:600;">${escapeHtml(r.username || 'User ' + r.user_id)}</div>
+                            <div style="font-size:var(--font-size-xs);color:var(--theme-text-secondary);">
+                                ${escapeHtml(r.movie_title || 'Movie ' + r.movie_id)} · ${timeAgo(r.created_at)}
+                                ${r.payment_status === 'pending' ? ' · <span style="color:#f59e0b;">Payment Pending</span>' : ''}
+                                ${r.payment_status === 'completed' ? ' · <span style="color:#10b981;">Paid</span>' : ''}
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:var(--space-xs);">
+                            ${r.payment_status === 'pending' ? `<button class="btn btn-sm btn-ghost" onclick="confirmPayment(${r.id})" title="Confirm Payment"><i class="fas fa-dollar-sign"></i></button>` : ''}
+                            <button class="btn btn-sm btn-primary" onclick="approveReq(${r.id})"><i class="fas fa-check"></i> Approve</button>
+                            <button class="btn btn-sm btn-danger" onclick="denyReq(${r.id})"><i class="fas fa-times"></i> Deny</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        <div class="admin-table-wrap">
+            <div class="admin-table-header">
+                <h3>All Requests</h3>
+                <select class="form-input" style="width:auto;padding:var(--space-xs) var(--space-md);border-radius:var(--radius-full);font-size:var(--font-size-sm);"
+                        onchange="filterAccessRequests(this.value)">
+                    <option value="">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                </select>
+            </div>
+            <table class="admin-table" id="accessTable">
+                <thead>
+                    <tr><th>User</th><th>Movie</th><th>Status</th><th>Payment</th><th>Code</th><th>Email</th><th>Date</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="accessTableBody">
+                    ${all.map(r => accessRow(r)).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    }
+
+    function accessRow(r) {
+        const paymentBadge = r.payment_status === 'completed'
+            ? '<span class="status-badge approved" style="font-size:10px;">Paid</span>'
+            : r.payment_status === 'pending'
+            ? '<span class="status-badge pending" style="font-size:10px;">Awaiting</span>'
+            : r.payment_status === 'failed'
+            ? '<span class="status-badge denied" style="font-size:10px;">Failed</span>'
+            : '<span style="color:var(--theme-text-muted);font-size:10px;">N/A</span>';
+
+        const emailIcon = r.email_sent
+            ? '<i class="fas fa-envelope-open" style="color:#10b981;" title="Email sent"></i>'
+            : r.access_code
+            ? '<i class="fas fa-envelope" style="color:var(--theme-text-muted);" title="Email not sent"></i>'
+            : '';
+
+        return `
+        <tr>
+            <td style="font-weight:500;">${escapeHtml(r.username || 'User ' + r.user_id)}</td>
+            <td>${escapeHtml(r.movie_title || 'Movie ' + r.movie_id)}</td>
+            <td><span class="status-badge ${r.status}">${r.status}</span></td>
+            <td>${paymentBadge}</td>
+            <td>
+                ${r.access_code ? `<code style="background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:var(--radius-sm);font-size:var(--font-size-xs);cursor:pointer;"
+                    onclick="copyCode('${r.access_code}')">${r.access_code}</code>` : '—'}
+            </td>
+            <td style="text-align:center;">${emailIcon}</td>
+            <td style="color:var(--theme-text-muted);font-size:var(--font-size-xs);">${timeAgo(r.created_at)}</td>
+            <td>
+                <div style="display:flex;gap:var(--space-xs);flex-wrap:wrap;">
+                    ${r.status === 'pending' ? `
+                        <button class="btn btn-sm btn-primary" onclick="approveReq(${r.id})" title="Approve"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="denyReq(${r.id})" title="Deny"><i class="fas fa-times"></i></button>
+                    ` : ''}
+                    ${r.status === 'pending' && r.payment_status === 'pending' ? `
+                        <button class="btn btn-sm btn-ghost" onclick="confirmPayment(${r.id})" title="Confirm Payment"><i class="fas fa-dollar-sign"></i></button>
+                    ` : ''}
+                    ${r.status === 'approved' && r.access_code ? `
+                        <button class="btn btn-sm btn-ghost" onclick="resendEmail(${r.id})" title="Resend Email"><i class="fas fa-paper-plane"></i></button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>
+    `;
+    }
+
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(() => showToast('Code copied! 📋', 'success'));
+    }
+
+    async function approveReq(id) {
+        try {
+            const result = await API.access.approve(id);
+            showToast(`Approved! Code: ${result.access_code}`, 'success');
+            renderAccessPanel();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    async function denyReq(id) {
+        try {
+            await API.access.deny(id);
+            showToast('Request denied', 'info');
+            renderAccessPanel();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    async function filterAccessRequests(status) {
+        try {
+            const requests = await API.access.all(status);
+            document.getElementById('accessTableBody').innerHTML = requests.map(r => accessRow(r)).join('');
+        } catch { }
+    }
+
+    async function confirmPayment(requestId) {
+        try {
+            const result = await API.access.confirmPayment(requestId);
+            showToast(`Payment confirmed! Code: ${result.access_code}`, 'success');
+            renderAccessPanel();
+        } catch (err) { showToast(err.error || 'Failed to confirm payment', 'error'); }
+    }
+
+    async function resendEmail(requestId) {
+        try {
+            const result = await API.access.resendCode(requestId);
+            showToast(result.message || 'Email resent!', 'success');
+            renderAccessPanel();
+        } catch (err) { showToast(err.error || 'Failed to resend email', 'error'); }
+    }
+
+    // ═══════════════════════════════════════
+    // PAYMENTS MANAGEMENT
+    // ═══════════════════════════════════════
+    async function renderPaymentsPanel() {
+        const main = document.getElementById('adminMain');
+        let allReqs = [];
+        try { allReqs = await API.access.all(''); } catch { }
+
+        const pendingPayments = allReqs.filter(r => r.payment_status === 'pending' && r.status === 'pending');
+        const completedPayments = allReqs.filter(r => r.payment_status === 'completed');
+        const failedPayments = allReqs.filter(r => r.payment_status === 'failed');
+
+        const payBadge = document.getElementById('paymentBadge');
+        if (pendingPayments.length > 0) { payBadge.style.display = 'inline'; payBadge.textContent = pendingPayments.length; }
+        else { payBadge.style.display = 'none'; }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>💳 Payment Management</h1>
+            <span style="color:var(--theme-text-secondary);font-size:var(--font-size-sm);">${allReqs.length} total transactions</span>
+        </div>
+
+        <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="color:#f59e0b;">⏳</div>
+                <div class="admin-stat-value">${pendingPayments.length}</div>
+                <div class="admin-stat-label">Pending Payments</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="color:#10b981;">✅</div>
+                <div class="admin-stat-value">${completedPayments.length}</div>
+                <div class="admin-stat-label">Completed</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="color:#ef4444;">❌</div>
+                <div class="admin-stat-value">${failedPayments.length}</div>
+                <div class="admin-stat-label">Failed</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="color:var(--theme-primary);">💰</div>
+                <div class="admin-stat-value">$${(completedPayments.length * 4.99).toFixed(2)}</div>
+                <div class="admin-stat-label">Revenue</div>
+            </div>
+        </div>
+
+        ${pendingPayments.length > 0 ? `
+        <div class="admin-form-section" style="border-left:3px solid #f59e0b;margin-bottom:var(--space-xl);">
+            <h3 style="color:#f59e0b;">⏳ Awaiting Payment (${pendingPayments.length})</h3>
+            <p style="color:var(--theme-text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-lg);">
+                These users have requested access but haven't completed payment. You can manually confirm if payment was received outside the system.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                ${pendingPayments.map(r => `
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-md);
+                        background:rgba(255,255,255,0.02);border-radius:var(--radius-md);border:1px solid var(--glass-border);">
+                        <div>
+                            <div style="font-weight:600;">${escapeHtml(r.username || 'User ' + r.user_id)}</div>
+                            <div style="font-size:var(--font-size-xs);color:var(--theme-text-secondary);">
+                                ${escapeHtml(r.movie_title || 'Movie ' + r.movie_id)}
+                                ${r.user_email ? ` · <i class="fas fa-envelope" style="font-size:10px;"></i> ${escapeHtml(r.user_email)}` : ''}
+                                · ${timeAgo(r.created_at)}
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:var(--space-xs);">
+                            <button class="btn btn-sm btn-primary" onclick="confirmPayment(${r.id})">
+                                <i class="fas fa-dollar-sign"></i> Confirm Payment
+                            </button>
+                            <button class="btn btn-sm btn-ghost" onclick="approveReq(${r.id})" title="Approve (free)">
+                                <i class="fas fa-gift"></i> Grant Free
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="denyReq(${r.id})" title="Deny">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : `
+        <div class="admin-form-section" style="text-align:center;padding:var(--space-2xl);">
+            <i class="fas fa-check-circle" style="font-size:2rem;color:#10b981;margin-bottom:var(--space-md);display:block;"></i>
+            <p style="color:var(--theme-text-secondary);">No pending payments. All caught up!</p>
+        </div>
+        `}
+
+        ${completedPayments.length > 0 ? `
+        <div class="admin-table-wrap">
+            <div class="admin-table-header">
+                <h3>✅ Completed Payments</h3>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>User</th><th>Movie</th><th>Payment ID</th><th>Code</th><th>Email</th><th>Date</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    ${completedPayments.map(r => `
+                        <tr>
+                            <td style="font-weight:500;">${escapeHtml(r.username || 'User ' + r.user_id)}</td>
+                            <td>${escapeHtml(r.movie_title || 'Movie ' + r.movie_id)}</td>
+                            <td><code style="font-size:var(--font-size-xs);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:var(--radius-sm);">${escapeHtml(r.payment_id || '—')}</code></td>
+                            <td>
+                                ${r.access_code ? `<code style="background:rgba(16,185,129,0.1);padding:2px 8px;border-radius:var(--radius-sm);font-size:var(--font-size-xs);cursor:pointer;color:#10b981;"
+                                    onclick="copyCode('${r.access_code}')">${r.access_code}</code>` : '—'}
+                            </td>
+                            <td style="text-align:center;">
+                                ${r.email_sent
+                                    ? '<i class="fas fa-check-circle" style="color:#10b981;" title="Sent"></i>'
+                                    : r.access_code ? `<button class="btn btn-sm btn-ghost" onclick="resendEmail(${r.id})" title="Send email"><i class="fas fa-paper-plane"></i></button>` : '—'
+                                }
+                            </td>
+                            <td style="color:var(--theme-text-muted);font-size:var(--font-size-xs);">${timeAgo(r.created_at)}</td>
+                            <td>
+                                ${r.access_code && !r.email_sent ? `<button class="btn btn-sm btn-ghost" onclick="resendEmail(${r.id})"><i class="fas fa-paper-plane"></i> Resend</button>` : '—'}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        ` : ''}
+    `;
+    }
+
+    // ═══════════════════════════════════════
+    // REVIEWS MANAGEMENT
+    // ═══════════════════════════════════════
+    async function renderReviewsPanel() {
+        const main = document.getElementById('adminMain');
+        let movies = [];
+        try {
+            const data = await API.catalog.movies('page_size=100');
+            movies = data.results || [];
+        } catch {}
+
+        // Load reviews for all movies
+        let allReviews = [];
+        for (const movie of movies.slice(0, 20)) {
+            try {
+                const data = await API.catalog.movieReviews(movie.id);
+                if (data.reviews && data.reviews.length) {
+                    allReviews.push(...data.reviews.map(r => ({...r, movie_title: movie.title, movie_slug: movie.slug})));
+                }
+            } catch {}
+        }
+
+        allReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        main.innerHTML = `
+            <div class="admin-page-header">
+                <h1>⭐ Reviews Management</h1>
+                <span style="color:var(--theme-text-secondary);font-size:var(--font-size-sm);">${allReviews.length} total reviews</span>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>User</th><th>Movie</th><th>Rating</th><th>Title</th><th>Spoiler</th><th>Likes</th><th>Date</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${allReviews.map(r => `
+                            <tr>
+                                <td style="font-weight:500;">${escapeHtml(r.username || 'User ' + r.user_id)}</td>
+                                <td><a href="/movie/${escapeHtml(r.movie_slug || '')}/" style="color:var(--theme-primary);text-decoration:none;">${escapeHtml(r.movie_title || '')}</a></td>
+                                <td><span style="font-weight:700;color:var(--theme-primary);">${r.rating}/10</span></td>
+                                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.title || '—')}</td>
+                                <td>${r.contains_spoilers ? '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>' : '—'}</td>
+                                <td>${r.likes || 0}</td>
+                                <td style="color:var(--theme-text-muted);font-size:var(--font-size-xs);">${timeAgo(r.created_at)}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" onclick="adminDeleteReview(${r.id})" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                        ${allReviews.length === 0 ? '<tr><td colspan="8" style="text-align:center;padding:var(--space-xl);color:var(--theme-text-muted);">No reviews yet</td></tr>' : ''}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    async function adminDeleteReview(reviewId) {
+        if (!confirm('Delete this review?')) return;
+        try {
+            await API.catalog.deleteReview(reviewId);
+            showToast('Review deleted', 'info');
+            renderReviewsPanel();
+        } catch (err) { showToast(err.error || 'Failed to delete', 'error'); }
+    }
+
+    // ═══════════════════════════════════════
+    // GENRES / CATEGORIES / PLAYLISTS
+    // ═══════════════════════════════════════
+    async function renderGenresPanel() {
+        const main = document.getElementById('adminMain');
+        let genres = [];
+        try { genres = await API.catalog.genres(); } catch { }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>🏷️ Genres</h1>
+            <button class="btn btn-primary" onclick="addGenreInline()"><i class="fas fa-plus"></i> Add Genre</button>
+        </div>
+        <div id="addGenreForm" style="display:none;margin-bottom:var(--space-lg);">
+            <div class="admin-form-section">
+                <div style="display:flex;gap:var(--space-md);align-items:flex-end;">
+                    <div class="form-group" style="flex:1;margin:0;">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" id="newGenreName" placeholder="Genre name">
+                    </div>
+                    <div class="form-group" style="flex:1;margin:0;">
+                        <label class="form-label">Slug</label>
+                        <input type="text" class="form-input" id="newGenreSlug" placeholder="genre-slug">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveNewGenre()">Save</button>
+                    <button class="btn btn-ghost" onclick="document.getElementById('addGenreForm').style.display='none'">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>Name</th><th>Slug</th><th>Movies</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${genres.map(g => `
+                        <tr>
+                            <td style="font-weight:600;">${escapeHtml(g.name)}</td>
+                            <td style="color:var(--theme-text-muted);">${escapeHtml(g.slug)}</td>
+                            <td>—</td>
+                            <td>
+                                <div style="display:flex;gap:var(--space-xs);">
+                                    <button class="btn btn-sm btn-ghost" onclick="editGenreInline(${g.id}, '${escapeHtml(g.name)}', '${escapeHtml(g.slug)}')" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteGenre(${g.id}, '${escapeHtml(g.name)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    }
+
+    function addGenreInline() {
+        document.getElementById('addGenreForm').style.display = 'block';
+        document.getElementById('newGenreName').focus();
+    }
+
+    async function saveNewGenre() {
+        const name = document.getElementById('newGenreName').value.trim();
+        const slug = document.getElementById('newGenreSlug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        if (!name) return;
+        try {
+            await API.catalog.createGenre({ name, slug });
+            showToast('Genre created!', 'success');
+            renderGenresPanel();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    function editGenreInline(id, name, slug) {
+        const form = document.getElementById('addGenreForm');
+        form.style.display = 'block';
+        document.getElementById('newGenreName').value = name;
+        document.getElementById('newGenreSlug').value = slug;
+        // Replace save button handler
+        form.querySelector('.btn-primary').onclick = async () => {
+            const newName = document.getElementById('newGenreName').value.trim();
+            const newSlug = document.getElementById('newGenreSlug').value.trim();
+            if (!newName) return;
+            try {
+                await API.catalog.updateGenre(id, { name: newName, slug: newSlug });
+                showToast('Genre updated!', 'success');
+                renderGenresPanel();
+            } catch (err) { showToast(err.error || 'Failed', 'error'); }
+        };
+    }
+
+    async function deleteGenre(id, name) {
+        document.getElementById('deleteModalText').textContent = `Delete genre "${name}"? Movies in this genre won't be affected.`;
+        document.getElementById('deleteModal').classList.add('active');
+        deleteCallback = async () => {
+            try {
+                await API.catalog.deleteGenre(id);
+                showToast('Genre deleted', 'info');
+                renderGenresPanel();
+            } catch (err) { showToast(err.error || 'Failed', 'error'); }
+        };
+    }
+
+    async function renderCategoriesPanel() {
+        const main = document.getElementById('adminMain');
+        let categories = [];
+        try { categories = await API.catalog.categories(); } catch { }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>📁 Categories</h1>
+            <button class="btn btn-primary" onclick="addCategoryInline()"><i class="fas fa-plus"></i> Add Category</button>
+        </div>
+        <div id="addCategoryForm" style="display:none;margin-bottom:var(--space-lg);">
+            <div class="admin-form-section">
+                <div style="display:flex;gap:var(--space-md);align-items:flex-end;">
+                    <div class="form-group" style="flex:1;margin:0;">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" id="newCatName" placeholder="Category name">
+                    </div>
+                    <div class="form-group" style="flex:1;margin:0;">
+                        <label class="form-label">Slug</label>
+                        <input type="text" class="form-input" id="newCatSlug" placeholder="category-slug">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveNewCategory()">Save</button>
+                    <button class="btn btn-ghost" onclick="document.getElementById('addCategoryForm').style.display='none'">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>Icon</th><th>Name</th><th>Slug</th><th>Movies</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${categories.map(c => `
+                        <tr>
+                            <td>${c.icon || '<img src="/static/img/Logo/logo.svg" style="width:24px; border-radius:4px;">'}</td>
+                            <td style="font-weight:600;">${escapeHtml(c.name)}</td>
+                            <td style="color:var(--theme-text-muted);">${escapeHtml(c.slug)}</td>
+                            <td>${c.movie_count || 0}</td>
+                            <td>
+                                <div style="display:flex;gap:var(--space-xs);">
+                                    <button class="btn btn-sm btn-ghost" onclick="editCategoryInline(${c.id}, '${escapeHtml(c.name)}', '${escapeHtml(c.slug)}')" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteCategory(${c.id}, '${escapeHtml(c.name)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    }
+
+    function addCategoryInline() {
+        document.getElementById('addCategoryForm').style.display = 'block';
+        document.getElementById('newCatName').focus();
+    }
+
+    async function saveNewCategory() {
+        const name = document.getElementById('newCatName').value.trim();
+        const slug = document.getElementById('newCatSlug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        if (!name) return;
+        try {
+            await API.catalog.createCategory({ name, slug });
+            showToast('Category created!', 'success');
+            renderCategoriesPanel();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    function editCategoryInline(id, name, slug) {
+        const form = document.getElementById('addCategoryForm');
+        form.style.display = 'block';
+        document.getElementById('newCatName').value = name;
+        document.getElementById('newCatSlug').value = slug;
+        form.querySelector('.btn-primary').onclick = async () => {
+            const newName = document.getElementById('newCatName').value.trim();
+            const newSlug = document.getElementById('newCatSlug').value.trim();
+            if (!newName) return;
+            try {
+                await API.catalog.updateCategory(id, { name: newName, slug: newSlug });
+                showToast('Category updated!', 'success');
+                renderCategoriesPanel();
+            } catch (err) { showToast(err.error || 'Failed', 'error'); }
+        };
+    }
+
+    async function deleteCategory(id, name) {
+        document.getElementById('deleteModalText').textContent = `Delete category "${name}"? Movies will be uncategorized.`;
+        document.getElementById('deleteModal').classList.add('active');
+        deleteCallback = async () => {
+            try {
+                await API.catalog.deleteCategory(id);
+                showToast('Category deleted', 'info');
+                renderCategoriesPanel();
+            } catch (err) { showToast(err.error || 'Failed', 'error'); }
+        };
+    }
+
+    async function renderPlaylistsPanel() {
+        const main = document.getElementById('adminMain');
+        let playlists = [];
+        try { playlists = await API.catalog.playlists(); } catch { }
+
+        main.innerHTML = `
+        <div class="admin-page-header">
+            <h1>📋 Playlists</h1>
+            <button class="btn btn-primary" onclick="addPlaylistInline()"><i class="fas fa-plus"></i> Add Playlist</button>
+        </div>
+        <div id="addPlaylistForm" style="display:none;margin-bottom:var(--space-lg);">
+            <div class="admin-form-section">
+                <div style="display:flex;gap:var(--space-md);align-items:flex-end;">
+                    <div class="form-group" style="flex:1;margin:0;">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" id="newPlaylistName" placeholder="Playlist name">
+                    </div>
+                    <div class="form-group" style="flex:1;margin:0;">
+                        <label class="form-label">Slug</label>
+                        <input type="text" class="form-input" id="newPlaylistSlug" placeholder="playlist-slug">
+                    </div>
+                    <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-size-sm);">
+                        <input type="checkbox" id="newPlaylistFeatured"> Featured
+                    </label>
+                    <button class="btn btn-primary" onclick="saveNewPlaylist()">Save</button>
+                    <button class="btn btn-ghost" onclick="document.getElementById('addPlaylistForm').style.display='none'">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>Name</th><th>Slug</th><th>Movies</th><th>Featured</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${playlists.map(p => `
+                        <tr>
+                            <td style="font-weight:600;">${escapeHtml(p.name)}</td>
+                            <td style="color:var(--theme-text-muted);">${escapeHtml(p.slug)}</td>
+                            <td>${p.movie_count || 0}</td>
+                            <td>
+                                <button class="btn btn-sm ${p.is_featured ? 'btn-primary' : 'btn-ghost'}" onclick="togglePlaylistFeatured(${p.id}, ${!p.is_featured})">
+                                    ${p.is_featured ? '⭐ Yes' : '☆ No'}
+                                </button>
+                            </td>
+                            <td>
+                                <div style="display:flex;gap:var(--space-xs);">
+                                    <button class="btn btn-sm btn-ghost" onclick="editPlaylistInline(${p.id}, '${escapeHtml(p.name)}', '${escapeHtml(p.slug)}', ${p.is_featured})" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-danger" onclick="deletePlaylist(${p.id}, '${escapeHtml(p.name)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    }
+
+    function addPlaylistInline() {
+        document.getElementById('addPlaylistForm').style.display = 'block';
+        document.getElementById('newPlaylistName').focus();
+    }
+
+    async function saveNewPlaylist() {
+        const name = document.getElementById('newPlaylistName').value.trim();
+        const slug = document.getElementById('newPlaylistSlug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const featured = document.getElementById('newPlaylistFeatured').checked;
+        if (!name) return;
+        try {
+            await API.catalog.createPlaylist({ name, slug, is_featured: featured });
+            showToast('Playlist created!', 'success');
+            renderPlaylistsPanel();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    function editPlaylistInline(id, name, slug, isFeatured) {
+        const form = document.getElementById('addPlaylistForm');
+        form.style.display = 'block';
+        document.getElementById('newPlaylistName').value = name;
+        document.getElementById('newPlaylistSlug').value = slug;
+        document.getElementById('newPlaylistFeatured').checked = isFeatured;
+        form.querySelector('.btn-primary').onclick = async () => {
+            const newName = document.getElementById('newPlaylistName').value.trim();
+            const newSlug = document.getElementById('newPlaylistSlug').value.trim();
+            const newFeatured = document.getElementById('newPlaylistFeatured').checked;
+            if (!newName) return;
+            try {
+                await API.catalog.updatePlaylist(id, { name: newName, slug: newSlug, is_featured: newFeatured });
+                showToast('Playlist updated!', 'success');
+                renderPlaylistsPanel();
+            } catch (err) { showToast(err.error || 'Failed', 'error'); }
+        };
+    }
+
+    async function togglePlaylistFeatured(id, featured) {
+        try {
+            await API.catalog.updatePlaylist(id, { is_featured: featured });
+            showToast(featured ? 'Playlist featured! ⭐' : 'Playlist unfeatured', 'success');
+            renderPlaylistsPanel();
+        } catch (err) { showToast(err.error || 'Failed', 'error'); }
+    }
+
+    async function deletePlaylist(id, name) {
+        document.getElementById('deleteModalText').textContent = `Delete playlist "${name}"?`;
+        document.getElementById('deleteModal').classList.add('active');
+        deleteCallback = async () => {
+            try {
+                await API.catalog.deletePlaylist(id);
+                showToast('Playlist deleted', 'info');
+                renderPlaylistsPanel();
+            } catch (err) { showToast(err.error || 'Failed', 'error'); }
+        };
+    }
+</script>
+{% endblock %}

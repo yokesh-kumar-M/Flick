@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Player{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video-js.min.css" rel="stylesheet">
+<style>
+    .main-content { padding-top: var(--navbar-height); }
+    .player-page { padding: var(--space-lg); }
+    .video-js { width: 100% !important; height: auto !important; aspect-ratio: 16/9; border-radius: var(--radius-lg); }
+    .vjs-theme-flick .vjs-play-progress { background: var(--theme-primary) !important; }
+    .vjs-theme-flick .vjs-volume-level { background: var(--theme-primary) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="player-page container">
+    <div class="player-container" id="playerContainer">
+        <video id="flickPlayer" class="video-js vjs-big-play-centered vjs-theme-flick"
+               controls preload="auto" data-setup='{}' crossorigin="anonymous">
+            <p class="vjs-no-js">Enable JavaScript to watch this video.</p>
+        </video>
+    </div>
+
+    <div id="playerInfo" style="margin-top:var(--space-lg);display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:var(--space-lg);">
+        <div>
+            <h2 id="playerTitle" style="font-size:var(--font-size-2xl);font-weight:800;"></h2>
+            <p id="playerMeta" style="color:var(--theme-text-secondary);margin-top:var(--space-sm);font-size:var(--font-size-sm);"></p>
+        </div>
+        <a href="#" id="backToDetail" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    <div class="player-controls-panel" id="audioPanel">
+        <h3 style="margin-bottom:var(--space-lg);font-weight:700;">🎧 Audio Controls</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-xl);flex-wrap:wrap;">
+            <div>
+                <h4 style="margin-bottom:var(--space-md);font-size:var(--font-size-sm);color:var(--theme-text-secondary);">5-Band Equalizer</h4>
+                <div class="equalizer-container" id="eqContainer"></div>
+                <div class="audio-presets" style="margin-top:var(--space-md);">
+                    <button class="preset-btn active" onclick="setPreset('flat')">Flat</button>
+                    <button class="preset-btn" onclick="setPreset('cinema')">Cinema</button>
+                    <button class="preset-btn" onclick="setPreset('music')">Music</button>
+                    <button class="preset-btn" onclick="setPreset('voice')">Voice</button>
+                    <button class="preset-btn" onclick="setPreset('night')">Night</button>
+                    <button class="preset-btn" onclick="setPreset('bass_boost')">Bass+</button>
+                    <button class="preset-btn" onclick="setPreset('treble_boost')">Treble+</button>
+                </div>
+            </div>
+            <div>
+                <h4 style="margin-bottom:var(--space-md);font-size:var(--font-size-sm);color:var(--theme-text-secondary);">Spatial Audio</h4>
+                <div style="margin-bottom:var(--space-md);">
+                    <label class="form-label">Stereo Pan</label>
+                    <input type="range" min="-100" max="100" value="0" id="panSlider" style="width:100%;"
+                           oninput="flickAudio.setPan(this.value/100)">
+                    <div style="display:flex;justify-content:space-between;font-size:var(--font-size-xs);color:var(--theme-text-muted);">
+                        <span>Left</span><span>Center</span><span>Right</span>
+                    </div>
+                </div>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);cursor:pointer;">
+                    <input type="checkbox" id="normToggle" checked onchange="flickAudio.setNormalization(this.checked)">
+                    <span style="font-size:var(--font-size-sm);">Volume Normalization</span>
+                </label>
+                <h4 style="margin-top:var(--space-lg);margin-bottom:var(--space-sm);font-size:var(--font-size-sm);color:var(--theme-text-secondary);">Visualizer</h4>
+                <canvas class="visualizer-canvas" id="visualizerCanvas" width="400" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video.min.js"></script>
+<script src="{% static 'js/audio-engine.js' %}"></script>
+<script>
+const slug = '{{ slug }}';
+let player = null;
+let sessionToken = null;
+let heartbeatInterval = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const data = await API.catalog.movie(slug);
+        const movie = data.movie;
+
+        // ACCESS GUARD: Check if user has permission to watch
+        if (movie.requires_access) {
+            try {
+                const access = await API.access.check(movie.id);
+                if (!access.has_access) {
+                    document.getElementById('playerContainer').innerHTML = `
+                        <div style="text-align:center;padding:80px 20px;">
+                            <div style="width:80px;height:80px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-xl);font-size:2rem;">
+                                <i class="fas fa-lock" style="color:#ef4444;"></i>
+                            </div>
+                            <h2 style="margin-bottom:var(--space-md);">Access Required</h2>
+                            <p style="color:var(--theme-text-secondary);margin-bottom:var(--space-xl);max-width:400px;margin-left:auto;margin-right:auto;">
+                                You need to request access before watching this movie.
+                                ${access.requires_payment ? 'A payment of $4.99 is required.' : ''}
+                            </p>
+                            <div style="display:flex;gap:var(--space-md);justify-content:center;">
+                                <a href="/movie/${slug}/" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-key"></i> Request Access
+                                </a>
+                                <a href="/browse/" class="btn btn-ghost btn-lg">Browse Movies</a>
+                            </div>
+                        </div>`;
+                    document.getElementById('audioPanel').style.display = 'none';
+                    return;
+                }
+            } catch (e) {
+                // If access check fails (not logged in), redirect
+                document.getElementById('playerContainer').innerHTML = `
+                    <div style="text-align:center;padding:80px 20px;">
+                        <div style="width:80px;height:80px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-xl);font-size:2rem;">
+                            <i class="fas fa-sign-in-alt" style="color:var(--theme-primary);"></i>
+                        </div>
+                        <h2 style="margin-bottom:var(--space-md);">Sign In Required</h2>
+                        <p style="color:var(--theme-text-secondary);margin-bottom:var(--space-xl);">Please sign in to watch this movie.</p>
+                        <a href="/login/" class="btn btn-primary btn-lg"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                    </div>`;
+                document.getElementById('audioPanel').style.display = 'none';
+                return;
+            }
+        }
+
+        document.getElementById('playerTitle').textContent = movie.title;
+        document.getElementById('playerMeta').textContent =
+            `${movie.release_year || ''} · ${movie.duration ? movie.duration + ' min' : ''} · ${movie.maturity_rating || ''}`;
+        document.getElementById('backToDetail').href = `/movie/${slug}/`;
+
+        if (movie.poster_display) ThemeEngine.extractAndApply(movie.poster_display);
+
+        player = videojs('flickPlayer', {
+            controls: true, autoplay: false, preload: 'auto', fluid: true,
+            playbackRates: [0.5, 1, 1.25, 1.5, 2],
+            controlBar: {
+                children: ['playToggle','volumePanel','currentTimeDisplay','timeDivider','durationDisplay','progressControl','playbackRateMenuButton','fullscreenToggle']
+            }
+        });
+
+        if (movie.video_file) player.src({ type: 'video/mp4', src: movie.video_file });
+        else if (movie.trailer_url) player.src({ type: 'video/mp4', src: movie.trailer_url });
+
+        player.on('play', () => {
+            const videoEl = player.el().querySelector('video');
+            if (videoEl && !flickAudio.isInitialized) {
+                flickAudio.init(videoEl);
+                flickAudio.resume();
+                buildEqualizer();
+                flickAudio.startVisualizer(document.getElementById('visualizerCanvas'));
+            }
+        });
+
+        if (currentUser) {
+            try {
+                const stream = await API.streaming.start({ movie_id: movie.id });
+                sessionToken = stream.session_token;
+                heartbeatInterval = setInterval(() => {
+                    if (sessionToken) API.streaming.heartbeat(sessionToken).catch(() => {});
+                }, 30000);
+            } catch {}
+
+            player.on('timeupdate', debounce(() => {
+                const duration = player.duration() || 1;
+                const currentTime = player.currentTime() || 0;
+                const progress = (currentTime / duration) * 100;
+                API.auth.updateProgress({
+                    movie_id: movie.id, progress: Math.round(progress),
+                    last_position: Math.round(currentTime), duration: Math.round(duration),
+                    movie_title: movie.title, movie_poster: movie.poster_display || '',
+                }).catch(() => {});
+            }, 10000));
+        }
+    } catch (e) {
+        document.getElementById('playerContainer').innerHTML =
+            '<p style="text-align:center;padding:80px;color:var(--theme-text-secondary);">Failed to load movie</p>';
+    }
+});
+
+function buildEqualizer() {
+    const container = document.getElementById('eqContainer');
+    if (!container) return;
+    container.innerHTML = flickAudio.bandFrequencies.map((band, i) => `
+        <div class="eq-band">
+            <span class="eq-label" id="eqVal${i}">0</span>
+            <input type="range" class="eq-slider" orient="vertical" min="-12" max="12" value="0" step="1" oninput="updateEQ(${i}, this.value)">
+            <span class="eq-label">${band.label}</span>
+        </div>
+    `).join('');
+}
+
+function updateEQ(index, value) {
+    flickAudio.setEQBand(index, parseFloat(value));
+    const label = document.getElementById(`eqVal${index}`);
+    if (label) label.textContent = value > 0 ? `+${value}` : value;
+}
+
+function setPreset(name) {
+    flickAudio.applyPreset(name);
+    const values = flickAudio.presets[name];
+    values.forEach((val, i) => {
+        const slider = document.querySelector(`.eq-band:nth-child(${i + 1}) .eq-slider`);
+        if (slider) slider.value = val;
+        const label = document.getElementById(`eqVal${i}`);
+        if (label) label.textContent = val > 0 ? `+${val}` : val;
+    });
+    document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+window.addEventListener('beforeunload', () => {
+    if (sessionToken) API.streaming.end(sessionToken).catch(() => {});
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    if (flickAudio.isInitialized) flickAudio.destroy();
+});
+</script>
+{% endblock %}

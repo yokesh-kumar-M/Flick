@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card fade-in-scale">
+        <div class="auth-card-header">
+            <img src="/static/img/Logo/logo.svg"
+                style="width:48px; border-radius:12px; margin-bottom:var(--space-md); box-shadow: 0 0 15px rgba(255,255,255,0.2);">
+            <h1>Welcome Back</h1>
+            <p>Sign in to continue streaming</p>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)" style="position:relative;">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-input" id="loginUsername" placeholder="Enter username" required
+                    autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required
+                    autocomplete="current-password">
+            </div>
+
+            <div id="loginError" class="form-error" style="display:none;margin-bottom:var(--space-md);"></div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;" id="loginBtn">
+                Sign In
+            </button>
+
+            <p
+                style="text-align:center;margin-top:var(--space-lg);color:var(--theme-text-secondary);font-size:var(--font-size-sm);">
+                Don't have an account? <a href="/register/" style="font-weight:600;">Create one</a>
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function handleLogin(e) {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        const errorEl = document.getElementById('loginError');
+        errorEl.style.display = 'none';
+        btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+        btn.disabled = true;
+
+        try {
+            const data = await API.auth.login({
+                username: document.getElementById('loginUsername').value,
+                password: document.getElementById('loginPassword').value,
+            });
+            showToast('Welcome back! <img src="/static/img/Logo/logo.svg" style="width:20px; vertical-align:middle; display:inline-block; border-radius:4px;">', 'success');
+            setTimeout(() => window.location.href = '/', 500);
+        } catch (err) {
+            errorEl.textContent = err.error || 'Invalid credentials';
+            errorEl.style.display = 'block';
+            btn.textContent = 'Sign In';
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

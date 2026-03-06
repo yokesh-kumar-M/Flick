@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Playlist{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:var(--space-2xl);">
+    <div id="playlistPage">
+        <div class="skeleton" style="height:200px;border-radius:var(--radius-lg);"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const playlistSlug = '{{ slug }}';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const data = await API.catalog.playlist(playlistSlug);
+        document.getElementById('playlistPage').innerHTML = `
+            <div style="margin-bottom:var(--space-2xl);">
+                <h1 style="font-size:var(--font-size-3xl);font-weight:800;">${escapeHtml(data.name)}</h1>
+                <p style="color:var(--theme-text-secondary);margin-top:var(--space-sm);">${escapeHtml(data.description || '')}</p>
+                <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:var(--space-xs);">${data.movie_count || 0} movies</p>
+            </div>
+            <div class="movie-grid stagger-children">
+                ${(data.movies || []).map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('')}
+            </div>
+        `;
+
+        // Apply theme from first movie poster
+        if (data.poster_url) ThemeEngine.extractAndApply(data.poster_url);
+        else if (data.movies?.length) ThemeEngine.extractAndApply(data.movies[0].poster_display);
+    } catch {
+        document.getElementById('playlistPage').innerHTML = '<p style="text-align:center;padding:80px;">Playlist not found.</p>';
+    }
+});
+</script>
+{% endblock %}

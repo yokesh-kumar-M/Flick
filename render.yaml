@@ -1,0 +1,167 @@
+# ──────────────────────────────────────────────────────────────────
+# Flick Deployment Blueprint for Render
+# ──────────────────────────────────────────────────────────────────
+# This file defines the infrastructure as code for Render.com.
+# Connect your GitHub repository to Render and use this file (Blueprint)
+# to deploy all 7 microservices automatically.
+# 
+# Note: This will create 1 Redis instance and 7 Web Services.
+# Depending on your Render billing plan, you may want to drop the 'plan: free'
+# if you intend to run this on a paid tier, or if Free plan limits are hit.
+
+services:
+  # ── Infrastructure ──
+  - type: redis
+    name: flick-redis
+    ipAllowList: []
+    plan: free # Render's new Key-Value Store or fallback to starter if needed
+    maxmemoryPolicy: allkeys-lru
+
+  # ── Backend Microservices ──
+  - type: web
+    name: flick-auth-service
+    env: docker
+    plan: free
+    dockerfilePath: ./auth_service/Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: flick-catalog-service
+    env: docker
+    plan: free
+    dockerfilePath: ./catalog_service/Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: flick-access-service
+    env: docker
+    plan: free
+    dockerfilePath: ./access_service/Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: flick-streaming-service
+    env: docker
+    plan: free
+    dockerfilePath: ./streaming_service/Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: flick-recommendation-service
+    env: docker
+    plan: free
+    dockerfilePath: ./recommendation_service/Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: flick-notification-service
+    env: docker
+    plan: free
+    dockerfilePath: ./notification_service/Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+
+  # ── Gateway (Frontend + Routing) ──
+  - type: web
+    name: flick-gateway
+    env: docker
+    plan: free
+    dockerfilePath: ./gateway/Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: AUTH_SERVICE_URL
+        fromService:
+          type: web
+          name: flick-auth-service
+          property: url
+      - key: CATALOG_SERVICE_URL
+        fromService:
+          type: web
+          name: flick-catalog-service
+          property: url
+      - key: ACCESS_SERVICE_URL
+        fromService:
+          type: web
+          name: flick-access-service
+          property: url
+      - key: STREAMING_SERVICE_URL
+        fromService:
+          type: web
+          name: flick-streaming-service
+          property: url
+      - key: RECOMMENDATION_SERVICE_URL
+        fromService:
+          type: web
+          name: flick-recommendation-service
+          property: url
+      - key: NOTIFICATION_SERVICE_URL
+        fromService:
+          type: web
+          name: flick-notification-service
+          property: url

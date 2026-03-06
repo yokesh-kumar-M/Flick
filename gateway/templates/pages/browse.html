@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Browse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="browse-layout">
+        <!-- Mood Engine Sidebar -->
+        <aside class="mood-sidebar" id="moodSidebar">
+            <button class="mood-btn" data-mood="all" onclick="selectMood('all', this)" title="All">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/logo.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">All</span>
+            </button>
+            <button class="mood-btn" data-mood="intense" onclick="selectMood('intense', this)" title="Intense">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/intense.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">Intense</span>
+            </button>
+            <button class="mood-btn" data-mood="feelgood" onclick="selectMood('feelgood', this)" title="Feel Good">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/feelgood.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">Feel Good</span>
+            </button>
+            <button class="mood-btn" data-mood="chill" onclick="selectMood('chill', this)" title="Chill Night">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/chill.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">Chill</span>
+            </button>
+            <button class="mood-btn" data-mood="dark" onclick="selectMood('dark', this)" title="Dark & Twisted">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/dark.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">Dark</span>
+            </button>
+            <button class="mood-btn" data-mood="mindblowing" onclick="selectMood('mindblowing', this)"
+                title="Mind-Blowing">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/epic.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">Epic</span>
+            </button>
+            <button class="mood-btn" data-mood="romantic" onclick="selectMood('romantic', this)" title="Romantic">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/romantic.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">Love</span>
+            </button>
+            <button class="mood-btn" data-mood="brainteaser" onclick="selectMood('brainteaser', this)"
+                title="Brain Teaser">
+                <span class="mood-btn-icon"><img src="/static/img/Logo/think.svg"
+                        style="width:24px; border-radius:8px;"></span>
+                <span class="mood-btn-label">Think</span>
+            </button>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="browse-main">
+            <div
+                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
+                <div>
+                    <h1 style="font-size:var(--font-size-3xl);font-weight:800;" id="browseTitle">Browse</h1>
+                    <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:4px;"
+                        id="browseSubtitle">Discover your next favorite</p>
+                </div>
+                <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">
+                    <select class="form-input" id="genreFilter"
+                        style="width:auto;padding:var(--space-sm) var(--space-md);font-size:var(--font-size-sm);border-radius:var(--radius-full);"
+                        onchange="filterMovies()">
+                        <option value="">All Genres</option>
+                    </select>
+                    <select class="form-input" id="sortFilter"
+                        style="width:auto;padding:var(--space-sm) var(--space-md);font-size:var(--font-size-sm);border-radius:var(--radius-full);"
+                        onchange="filterMovies()">
+                        <option value="-created_at">Newest</option>
+                        <option value="-rating">Top Rated</option>
+                        <option value="-trending_score">Trending</option>
+                        <option value="-view_count">Most Viewed</option>
+                        <option value="title">A-Z</option>
+                        <option value="-release_year">Release Year</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Genre Tags -->
+            <div id="genreTags" style="display:flex;gap:var(--space-sm);flex-wrap:wrap;margin-bottom:var(--space-xl);">
+            </div>
+
+            <!-- Movie Grid -->
+            <div class="movie-grid stagger-children" id="movieGrid">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
+
+            <!-- Load More -->
+            <div id="loadMoreSection" style="text-align:center;padding:var(--space-2xl);display:none;">
+                <button class="btn btn-ghost" onclick="loadMore()">Load More</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let isLoading = false;
+    let currentMood = 'all';
+
+    // Mood → genre mapping
+    const moodGenreMap = {
+        intense: ['action', 'thriller', 'war', 'crime'],
+        feelgood: ['comedy', 'family', 'animation', 'music'],
+        chill: ['drama', 'romance', 'documentary'],
+        dark: ['horror', 'thriller', 'mystery', 'crime'],
+        mindblowing: ['sci-fi', 'fantasy', 'adventure', 'mystery'],
+        romantic: ['romance', 'drama', 'comedy'],
+        brainteaser: ['mystery', 'thriller', 'sci-fi', 'documentary'],
+    };
+
+    const moodGradients = {
+        all: '',
+        intense: 'linear-gradient(135deg, rgba(239,68,68,0.05), transparent)',
+        feelgood: 'linear-gradient(135deg, rgba(245,158,11,0.05), transparent)',
+        chill: 'linear-gradient(135deg, rgba(99,102,241,0.05), transparent)',
+        dark: 'linear-gradient(135deg, rgba(30,27,75,0.1), transparent)',
+        mindblowing: 'linear-gradient(135deg, rgba(6,182,212,0.05), transparent)',
+        romantic: 'linear-gradient(135deg, rgba(236,72,153,0.05), transparent)',
+        brainteaser: 'linear-gradient(135deg, rgba(139,92,246,0.05), transparent)',
+    };
+
+    const moodTitles = {
+        all: 'Browse',
+        intense: '<img src="/static/img/Logo/intense.svg" style="width:32px; border-radius:8px; vertical-align:middle;"> Intense',
+        feelgood: '<img src="/static/img/Logo/feelgood.svg" style="width:32px; border-radius:8px; vertical-align:middle;"> Feel Good',
+        chill: '<img src="/static/img/Logo/chill.svg" style="width:32px; border-radius:8px; vertical-align:middle;"> Chill Night',
+        dark: '<img src="/static/img/Logo/dark.svg" style="width:32px; border-radius:8px; vertical-align:middle;"> Dark & Twisted',
+        mindblowing: '<img src="/static/img/Logo/epic.svg" style="width:32px; border-radius:8px; vertical-align:middle;"> Mind-Blowing',
+        romantic: '<img src="/static/img/Logo/romantic.svg" style="width:32px; border-radius:8px; vertical-align:middle;"> Romantic',
+        brainteaser: '<img src="/static/img/Logo/think.svg" style="width:32px; border-radius:8px; vertical-align:middle;"> Brain Teaser',
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadGenres();
+        await filterMovies();
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('genre')) document.getElementById('genreFilter').value = params.get('genre');
+        if (params.get('sort')) document.getElementById('sortFilter').value = params.get('sort');
+        if (params.has('genre') || params.has('sort')) filterMovies();
+    });
+
+    async function loadGenres() {
+        try {
+            const genres = await API.catalog.genres();
+            const select = document.getElementById('genreFilter');
+            const tags = document.getElementById('genreTags');
+
+            genres.forEach(g => {
+                const option = document.createElement('option');
+                option.value = g.slug;
+                option.textContent = g.name;
+                select.appendChild(option);
+            });
+
+            tags.innerHTML = genres.map(g =>
+                `<a href="/genre/${g.slug}/" class="genre-tag">${escapeHtml(g.name)}</a>`
+            ).join('');
+        } catch { }
+    }
+
+    function selectMood(mood, btn) {
+        currentMood = mood;
+        document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        document.getElementById('browseTitle').textContent = moodTitles[mood] || 'Browse';
+        document.getElementById('browseSubtitle').textContent =
+            mood === 'all' ? 'Discover your next favorite' : 'Curated for your mood';
+
+        // Apply mood background
+        document.querySelector('.browse-main').style.background = moodGradients[mood] || '';
+
+        filterMovies();
+    }
+
+    async function filterMovies() {
+        currentPage = 1;
+        const genre = document.getElementById('genreFilter').value;
+        const sort = document.getElementById('sortFilter').value;
+
+        const params = new URLSearchParams();
+        if (genre) params.set('genre', genre);
+        if (sort) params.set('sort', sort);
+        params.set('page', currentPage);
+        params.set('page_size', 24);
+
+        try {
+            const data = await API.catalog.movies(params.toString());
+            const grid = document.getElementById('movieGrid');
+            totalPages = data.total_pages || 1;
+
+            let results = data.results || [];
+
+            // Apply mood filtering client-side
+            if (currentMood !== 'all' && moodGenreMap[currentMood]) {
+                const moodGenres = moodGenreMap[currentMood];
+                results = results.filter(m => {
+                    if (!m.genres) return false;
+                    return m.genres.some(g => moodGenres.includes(g.slug?.toLowerCase()));
+                });
+            }
+
+            if (results.length > 0) {
+                grid.innerHTML = results.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('');
+                initCardTilt();
+            } else {
+                grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--theme-text-secondary);padding:60px 0;">
+                <i class="fas fa-film" style="font-size:2rem;display:block;margin-bottom:12px;opacity:0.3;"></i>
+                No movies found for this mood
+            </p>`;
+            }
+
+            document.getElementById('loadMoreSection').style.display = currentPage < totalPages ? 'block' : 'none';
+        } catch {
+            document.getElementById('movieGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--theme-text-secondary);">Failed to load movies</p>';
+        }
+    }
+
+    async function loadMore() {
+        if (isLoading || currentPage >= totalPages) return;
+        isLoading = true;
+        currentPage++;
+
+        const genre = document.getElementById('genreFilter').value;
+        const sort = document.getElementById('sortFilter').value;
+        const params = new URLSearchParams();
+        if (genre) params.set('genre', genre);
+        if (sort) params.set('sort', sort);
+        params.set('page', currentPage);
+        params.set('page_size', 24);
+
+        try {
+            const data = await API.catalog.movies(params.toString());
+            const grid = document.getElementById('movieGrid');
+            if (data.results) {
+                grid.innerHTML += data.results.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('');
+                initCardTilt();
+            }
+            document.getElementById('loadMoreSection').style.display = currentPage < totalPages ? 'block' : 'none';
+        } catch { }
+        isLoading = false;
+    }
+
+    const scrollObserver = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) loadMore();
+    }, { rootMargin: '200px' });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const sentinel = document.getElementById('loadMoreSection');
+        if (sentinel) scrollObserver.observe(sentinel);
+    });
+</script>
+{% endblock %}

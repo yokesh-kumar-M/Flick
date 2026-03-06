@@ -1,0 +1,151 @@
+/* ═══════════════════════════════════════════
+   Flick — "OLED Minimalist Noir" Design System
+   Ultra-stark, highly professional, craving UI
+   ═══════════════════════════════════════════ */
+
+:root {
+    /* ── Core OLED Palette ── */
+    --theme-primary: #ffffff;
+    --theme-primary-rgb: 255, 255, 255;
+    --theme-accent: #d4d4d8;
+    --theme-accent-rgb: 212, 212, 216;
+    --theme-bg: #000000;
+    --theme-bg-rgb: 0, 0, 0;
+    --theme-surface: #09090b;
+    --theme-surface-rgb: 9, 9, 11;
+    --theme-surface-2: #18181b;
+    --theme-surface-2-rgb: 24, 24, 27;
+    --theme-text: #fafafa;
+    --theme-text-secondary: #a1a1aa;
+    --theme-text-muted: #52525b;
+    --theme-border: #27272a;
+
+    /* ── Aurora Colors (Subdued to monochrome tones) ── */
+    --aurora-1: #ffffff;
+    --aurora-2: #d4d4d8;
+    --aurora-3: #a1a1aa;
+    --aurora-4: #71717a;
+    --aurora-5: #3f3f46;
+    --aurora-shift-speed: 20s;
+
+    /* ── Glassmorphism (Frosted, hyper-minimal) ── */
+    --glass-bg: rgba(9, 9, 11, 0.7);
+    --glass-bg-light: rgba(255, 255, 255, 0.03);
+    --glass-bg-medium: rgba(9, 9, 11, 0.85);
+    --glass-bg-heavy: rgba(0, 0, 0, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-border-bright: rgba(255, 255, 255, 0.12);
+    --glass-blur: 32px;
+    --glass-blur-heavy: 48px;
+
+    /* ── Neon Accents (Muted to crisp silver glows) ── */
+    --neon-primary: rgba(255, 255, 255, 0.2);
+    --neon-accent: rgba(212, 212, 216, 0.15);
+    --neon-cyan: rgba(255, 255, 255, 0.15);
+    --neon-pink: rgba(212, 212, 216, 0.15);
+    --neon-green: rgba(161, 161, 170, 0.15);
+
+    /* ── Depth System ── */
+    --depth-0: 0px;
+    --depth-1: 1px;
+    --depth-2: 4px;
+    --depth-3: 16px;
+    --depth-4: 32px;
+
+    /* ── Gradients ── */
+    --gradient-primary: linear-gradient(135deg, #ffffff, #d4d4d8);
+    --gradient-aurora: linear-gradient(135deg, #18181b, #09090b, #000000);
+    --gradient-dark: linear-gradient(180deg, transparent 0%, var(--theme-bg) 100%);
+    --gradient-card: linear-gradient(180deg, rgba(24, 24, 27, 0.4), rgba(9, 9, 11, 0.2));
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+    --gradient-radial-glow: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+    --gradient-hero-overlay: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.95) 80%, var(--theme-bg) 100%);
+
+    /* ── Shadows ── */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.8);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.9);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.95);
+    --shadow-xl: 0 24px 64px rgba(0, 0, 0, 1);
+    --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.1);
+    --shadow-glow-lg: 0 0 40px rgba(255, 255, 255, 0.15);
+    --shadow-neon: 0 0 10px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 0.05);
+    --shadow-card-hover: 0 12px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.15);
+
+    /* ── Transitions ── */
+    --transition-theme: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-medium: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-slow: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-spring: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+    /* ── Typography — Exacting Minimal ── */
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+    
+    /* Font Sizes (Tweaked for elegance) */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 2rem;
+    --font-size-3xl: 2.5rem;
+    --font-size-4xl: 3.5rem;
+    --font-size-5xl: 4.5rem;
+    --font-size-hero: 5.5rem;
+    
+    /* Letter spacing — tighter is sleeker */
+    --letter-spacing-tight: -0.04em;
+    --letter-spacing-normal: -0.01em;
+    --letter-spacing-wide: 0.02em;
+    --letter-spacing-wider: 0.06em;
+    
+    /* Font Weights */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+
+    /* ── Spacing ── */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2.5rem;
+    --space-2xl: 4rem;
+    --space-3xl: 6rem;
+    --space-4xl: 8rem;
+
+    /* ── Border Radius (Sharper for modern feel) ── */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-3xl: 32px;
+    --radius-full: 9999px;
+
+    /* ── Layout ── */
+    --navbar-height: 80px;
+    --container-max: 1600px;
+    --sidebar-width: 280px;
+
+    /* ── Mood Palette (All mapped to sleek monochromes) ── */
+    --mood-intense: #ffffff;
+    --mood-feelgood: #e4e4e7;
+    --mood-chill: #d4d4d8;
+    --mood-dark: #a1a1aa;
+    --mood-mindblowing: #f4f4f5;
+    --mood-romantic: #e4e4e7;
+    --mood-brainteaser: #d4d4d8;
+
+    /* ── Z-Index Scale ── */
+    --z-base: 1;
+    --z-dropdown: 100;
+    --z-navbar: 1000;
+    --z-modal: 2000;
+    --z-toast: 9000;
+    --z-particles: 0;
+}

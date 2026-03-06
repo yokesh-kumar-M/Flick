@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<div class="search-page">
+    <h1 class="search-hero-title fade-in">Discover</h1>
+    <div class="search-container">
+        <div class="search-input-wrapper" style="position:relative;">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" id="searchInput"
+                   placeholder="Search movies, directors, actors..."
+                   autofocus oninput="handleSearch()" onkeydown="handleSearchKey(event)">
+            <div id="autocompleteDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
+                 background:var(--theme-surface);border:1px solid var(--glass-border);border-radius:0 0 var(--radius-lg) var(--radius-lg);
+                 box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:100;max-height:400px;overflow-y:auto;">
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="width:100%;max-width:var(--container-max);">
+        <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;justify-content:center;margin-bottom:var(--space-xl);">
+            <button class="btn btn-sm btn-ghost" onclick="quickFilter('is_featured=true', 'Featured')" style="border-radius:var(--radius-full);">
+                <i class="fas fa-star" style="color:#f59e0b;"></i> Featured
+            </button>
+            <button class="btn btn-sm btn-ghost" onclick="quickFilter('sort=-trending_score', 'Trending')" style="border-radius:var(--radius-full);">
+                <i class="fas fa-fire" style="color:#ef4444;"></i> Trending
+            </button>
+            <button class="btn btn-sm btn-ghost" onclick="quickFilter('sort=-rating', 'Top Rated')" style="border-radius:var(--radius-full);">
+                <i class="fas fa-award" style="color:#8b5cf6;"></i> Top Rated
+            </button>
+            <button class="btn btn-sm btn-ghost" onclick="quickFilter('sort=-created_at', 'New Releases')" style="border-radius:var(--radius-full);">
+                <i class="fas fa-clock" style="color:#06b6d4;"></i> New Releases
+            </button>
+        </div>
+
+        <div id="genreQuickAccess" style="display:flex;gap:var(--space-sm);flex-wrap:wrap;justify-content:center;margin-bottom:var(--space-2xl);"></div>
+        <div id="recentSearches" style="margin-bottom:var(--space-2xl);"></div>
+        <div id="searchResults" style="text-align:center;"></div>
+        <div class="movie-grid stagger-children" id="searchGrid"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const debouncedAutocomplete = debounce(doAutocomplete, 150);
+let acIndex = -1;
+let acItems = [];
+
+function handleSearch() { debouncedAutocomplete(); }
+
+function handleSearchKey(e) {
+    const items = document.querySelectorAll('#autocompleteDropdown .ac-item');
+    if (e.key === 'ArrowDown') { e.preventDefault(); acIndex = Math.min(acIndex + 1, items.length - 1); hlAc(items); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); acIndex = Math.max(acIndex - 1, -1); hlAc(items); }
+    else if (e.key === 'Enter') { e.preventDefault(); acIndex >= 0 && items[acIndex] ? items[acIndex].click() : (closeAc(), doSearch()); }
+    else if (e.key === 'Escape') closeAc();
+}
+
+function hlAc(items) { items.forEach((el, i) => { el.style.background = i === acIndex ? 'rgba(var(--theme-primary-rgb),0.1)' : ''; }); }
+
+async function doAutocomplete() {
+    const q = document.getElementById('searchInput').value.trim();
+    const dd = document.getElementById('autocompleteDropdown');
+    if (q.length < 2) { closeAc(); return; }
+
+    try {
+        const data = await API.catalog.search(q);
+        const res = (data.results || []).slice(0, 6);
+        if (!res.length) { closeAc(); return; }
+
+        acIndex = -1; acItems = res;
+        dd.style.display = 'block';
+        dd.innerHTML = res.map((m) => `
+            <div class="ac-item" onclick="navigateTo('/movie/${escapeHtml(m.slug)}/'); saveRecent({id:${m.id},title:'${escapeHtml(m.title).replace(/'/g,"\\'")}',slug:'${escapeHtml(m.slug)}',poster:'${escapeHtml(m.poster_display||'')}'})"
+                 style="display:flex;gap:var(--space-md);align-items:center;padding:var(--space-sm) var(--space-md);cursor:pointer;transition:background 0.15s;border-bottom:1px solid rgba(255,255,255,0.03);"
+                 onmouseenter="this.style.background='rgba(var(--theme-primary-rgb),0.1)'" onmouseleave="this.style.background=''">
+                <img src="${escapeHtml(m.poster_display || '/static/img/default-poster.svg')}" style="width:36px;height:54px;border-radius:var(--radius-sm);object-fit:cover;" onerror="this.src='/static/img/default-poster.svg'">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:var(--font-size-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title)}</div>
+                    <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">
+                        ${m.release_year || ''} ${m.rating ? '⭐ '+m.rating : ''} ${m.genres ? m.genres.map(g=>g.name||g).slice(0,2).join(', ') : ''}
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:var(--theme-text-muted);font-size:var(--font-size-xs);"></i>
+            </div>
+        `).join('') + `
+            <div onclick="closeAc();doSearch();" style="padding:var(--space-sm) var(--space-md);text-align:center;cursor:pointer;color:var(--theme-primary);font-size:var(--font-size-sm);font-weight:600;border-top:1px solid var(--glass-border);"
+                 onmouseenter="this.style.background='rgba(var(--theme-primary-rgb),0.05)'" onmouseleave="this.style.background=''">
+                <i class="fas fa-search"></i> See all results
+            </div>`;
+    } catch { closeAc(); }
+}
+
+function closeAc() { document.getElementById('autocompleteDropdown').style.display = 'none'; acIndex = -1; }
+document.addEventListener('click', (e) => { if (!e.target.closest('.search-input-wrapper')) closeAc(); });
+
+// Recent searches
+function getRecent() { try { return JSON.parse(localStorage.getItem('flick_recent_searches') || '[]'); } catch { return []; } }
+function getRecentQ() { try { return JSON.parse(localStorage.getItem('flick_recent_queries') || '[]'); } catch { return []; } }
+
+function saveRecent(m) {
+    let r = getRecent().filter(x => x.id !== m.id);
+    r.unshift(m);
+    localStorage.setItem('flick_recent_searches', JSON.stringify(r.slice(0, 8)));
+}
+
+function saveQuery(q) {
+    let qs = getRecentQ().filter(x => x !== q);
+    qs.unshift(q);
+    localStorage.setItem('flick_recent_queries', JSON.stringify(qs.slice(0, 5)));
+}
+
+function clearRecent() {
+    localStorage.removeItem('flick_recent_searches');
+    localStorage.removeItem('flick_recent_queries');
+    renderRecent();
+    showToast('History cleared', 'info');
+}
+
+function renderRecent() {
+    const el = document.getElementById('recentSearches');
+    const recent = getRecent(), queries = getRecentQ();
+    if (!recent.length && !queries.length) { el.innerHTML = ''; return; }
+
+    el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+            <h3 style="font-size:var(--font-size-lg);font-weight:700;color:var(--theme-text-secondary);"><i class="fas fa-history" style="opacity:0.5;"></i> Recent</h3>
+            <button class="btn btn-sm btn-ghost" onclick="clearRecent()" style="font-size:var(--font-size-xs);">Clear</button>
+        </div>
+        ${queries.length ? `<div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;margin-bottom:var(--space-lg);">${queries.map(q => `
+            <button class="btn btn-sm btn-ghost" onclick="document.getElementById('searchInput').value='${escapeHtml(q)}';doSearch();" style="border-radius:var(--radius-full);font-size:var(--font-size-xs);"><i class="fas fa-search" style="opacity:0.4;"></i> ${escapeHtml(q)}</button>`).join('')}</div>` : ''}
+        ${recent.length ? `<div style="display:flex;gap:var(--space-md);overflow-x:auto;padding-bottom:var(--space-sm);">${recent.map(m => `
+            <div onclick="navigateTo('/movie/${escapeHtml(m.slug)}/')" style="cursor:pointer;text-align:center;min-width:80px;flex-shrink:0;">
+                <img src="${escapeHtml(m.poster || '/static/img/default-poster.svg')}" style="width:72px;height:108px;border-radius:var(--radius-md);object-fit:cover;" onerror="this.src='/static/img/default-poster.svg'">
+                <div style="font-size:var(--font-size-xs);margin-top:4px;color:var(--theme-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;">${escapeHtml(m.title)}</div>
+            </div>`).join('')}</div>` : ''}`;
+}
+
+// Main search
+async function doSearch() {
+    const q = document.getElementById('searchInput').value.trim();
+    const grid = document.getElementById('searchGrid');
+    const res = document.getElementById('searchResults');
+    if (q.length < 2) { grid.innerHTML = ''; res.innerHTML = ''; return; }
+
+    saveQuery(q); closeAc();
+    res.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+
+    try {
+        const data = await API.catalog.search(q);
+        const total = data.total || (data.results ? data.results.length : 0);
+        res.innerHTML = `<p style="color:var(--theme-text-secondary);margin-bottom:var(--space-xl);font-size:var(--font-size-sm);">${total} result${total!==1?'s':''} for "<strong style="color:var(--theme-text);">${escapeHtml(q)}</strong>"</p>`;
+
+        if (data.results && data.results.length) {
+            grid.innerHTML = data.results.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('');
+            initCardTilt();
+        } else {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;">
+                <i class="fas fa-search" style="font-size:3rem;display:block;margin-bottom:var(--space-lg);opacity:0.15;"></i>
+                <h3 style="color:var(--theme-text-secondary);">No results found</h3>
+                <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:var(--space-sm);">Try different keywords or browse by genre</p>
+            </div>`;
+        }
+    } catch {
+        res.innerHTML = '';
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--theme-text-muted);">Search failed. Try again.</p>';
+    }
+    renderRecent();
+}
+
+async function quickFilter(params, label) {
+    const grid = document.getElementById('searchGrid');
+    const res = document.getElementById('searchResults');
+    document.getElementById('searchInput').value = '';
+    closeAc();
+    res.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+
+    try {
+        const data = await API.catalog.movies(params + '&page_size=24');
+        const movies = data.results || [];
+        res.innerHTML = `<p style="color:var(--theme-text-secondary);margin-bottom:var(--space-xl);font-size:var(--font-size-sm);">Showing <strong style="color:var(--theme-text);">${label}</strong> · ${movies.length} movies</p>`;
+        grid.innerHTML = movies.length ? movies.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('') :
+            '<p style="grid-column:1/-1;text-align:center;color:var(--theme-text-muted);padding:60px;">No movies found</p>';
+        if (movies.length) initCardTilt();
+    } catch {
+        res.innerHTML = '';
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--theme-text-muted);">Failed to load</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const genres = await API.catalog.genres();
+        document.getElementById('genreQuickAccess').innerHTML = genres.map(g =>
+            `<a href="/genre/${g.slug}/" class="genre-tag" style="text-decoration:none;font-size:var(--font-size-xs);">${escapeHtml(g.name)}</a>`
+        ).join('');
+    } catch {}
+
+    renderRecent();
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('q')) { document.getElementById('searchInput').value = params.get('q'); doSearch(); }
+});
+</script>
+{% endblock %}

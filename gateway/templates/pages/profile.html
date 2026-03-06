@@ -1,0 +1,1551 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Profile Page Layout ── */
+.profile-page { min-height: 100vh; padding-bottom: var(--space-4xl); }
+
+/* ── Hero Banner ── */
+.profile-hero {
+    position: relative;
+    padding: calc(var(--navbar-height) + var(--space-2xl)) var(--space-xl) var(--space-2xl);
+    overflow: hidden;
+}
+.profile-hero-backdrop {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 70% 100% at 30% 0%, rgba(var(--theme-primary-rgb), 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 80% at 80% 20%, rgba(var(--theme-accent-rgb, 245,158,11), 0.08) 0%, transparent 60%);
+    z-index: 0;
+}
+.profile-hero-backdrop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, var(--theme-bg) 100%);
+}
+.profile-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: var(--container-max);
+    margin: 0 auto;
+    display: flex;
+    gap: var(--space-2xl);
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+/* ── Avatar Zone ── */
+.profile-avatar-zone {
+    position: relative;
+    flex-shrink: 0;
+}
+.profile-avatar-xl {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 800;
+    color: white;
+    position: relative;
+    box-shadow: 0 0 0 4px var(--theme-bg), 0 0 0 6px rgba(var(--theme-primary-rgb), 0.4), var(--shadow-glow);
+    overflow: hidden;
+    cursor: pointer;
+    transition: var(--transition-medium);
+}
+.profile-avatar-xl:hover { transform: scale(1.04); }
+.profile-avatar-xl img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.profile-avatar-xl .avatar-hover-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition-fast);
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+}
+.profile-avatar-xl:hover .avatar-hover-overlay { opacity: 1; }
+.avatar-hover-overlay i { font-size: 1.4rem; color: white; }
+.avatar-hover-overlay span { font-size: 0.65rem; color: rgba(255,255,255,0.8); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ── Hero Info ── */
+.profile-hero-info { flex: 1; min-width: 260px; }
+.profile-hero-name {
+    font-size: var(--font-size-4xl);
+    font-weight: 900;
+    line-height: 1.1;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-xs);
+}
+.profile-hero-handle { color: var(--theme-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-xs); }
+.profile-hero-email { color: var(--theme-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-xs); }
+.profile-hero-meta { color: var(--theme-text-muted); font-size: var(--font-size-xs); margin-bottom: var(--space-lg); }
+.profile-hero-bio { color: var(--theme-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-lg); font-style: italic; max-width: 480px; }
+
+/* ── Quick Stats Bar ── */
+.profile-quick-stats {
+    display: flex;
+    gap: var(--space-xl);
+    flex-wrap: wrap;
+}
+.pqs-item { text-align: center; }
+.pqs-value {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--theme-text);
+    display: block;
+    line-height: 1;
+}
+.pqs-label {
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+}
+
+/* Admin Badge */
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: rgba(var(--theme-primary-rgb), 0.15);
+    border: 1px solid rgba(var(--theme-primary-rgb), 0.3);
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--theme-primary);
+    letter-spacing: 0.05em;
+    margin-left: var(--space-sm);
+    vertical-align: middle;
+}
+
+/* Super Access Badge */
+.super-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(168,85,247,0.15));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 700;
+    color: #a855f7;
+    letter-spacing: 0.05em;
+    margin-left: var(--space-sm);
+    vertical-align: middle;
+}
+
+/* ── Tab Navigation ── */
+.profile-tabs-nav {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--space-xl);
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--glass-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.profile-tabs-nav::-webkit-scrollbar { display: none; }
+.ptab {
+    padding: var(--space-md) var(--space-lg);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--theme-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: -1px;
+}
+.ptab:hover { color: var(--theme-text); }
+.ptab.active {
+    color: var(--theme-primary);
+    border-bottom-color: var(--theme-primary);
+}
+
+/* ── Tab Panels ── */
+.profile-content {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: var(--space-2xl) var(--space-xl);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Form Cards ── */
+.profile-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2xl);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    margin-bottom: var(--space-xl);
+    position: relative;
+    overflow: hidden;
+}
+.profile-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-glass);
+    pointer-events: none;
+}
+.profile-card-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin-bottom: var(--space-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+/* ── Avatar Upload Drop Zone in Account tab ── */
+.avatar-drop-zone {
+    border: 2px dashed var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    position: relative;
+    background: rgba(var(--theme-primary-rgb), 0.02);
+}
+.avatar-drop-zone:hover, .avatar-drop-zone.dragover {
+    border-color: rgba(var(--theme-primary-rgb), 0.4);
+    background: rgba(var(--theme-primary-rgb), 0.05);
+}
+.avatar-drop-zone .drop-preview {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto var(--space-md);
+    display: none;
+}
+.avatar-drop-zone .drop-preview.visible { display: block; }
+.avatar-drop-zone i { font-size: 2rem; color: var(--theme-text-muted); margin-bottom: var(--space-sm); display: block; }
+.avatar-drop-zone p { color: var(--theme-text-secondary); font-size: var(--font-size-sm); }
+.avatar-drop-zone small { color: var(--theme-text-muted); font-size: var(--font-size-xs); margin-top: 4px; display: block; }
+
+/* ── Password Strength ── */
+.password-strength { margin-top: var(--space-sm); }
+.strength-bar {
+    height: 4px;
+    border-radius: var(--radius-full);
+    background: var(--glass-border);
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.strength-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.4s ease, background 0.4s ease;
+    width: 0%;
+}
+.strength-text { font-size: var(--font-size-xs); color: var(--theme-text-muted); }
+
+/* ── History Grid tweaks ── */
+.history-empty {
+    text-align: center;
+    padding: var(--space-4xl) 0;
+    color: var(--theme-text-muted);
+}
+.history-empty i { font-size: 3rem; display: block; margin-bottom: var(--space-md); opacity: 0.3; }
+
+/* ── Genre Chart ── */
+.genre-overview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    align-items: center;
+}
+.genre-legend-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.genre-legend-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius-md);
+    transition: var(--transition-fast);
+}
+.genre-legend-row:hover { background: rgba(255,255,255,0.04); }
+.genre-legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.genre-legend-name { flex: 1; font-size: var(--font-size-sm); font-weight: 500; }
+.genre-legend-count { font-size: var(--font-size-xs); color: var(--theme-text-muted); }
+.genre-legend-bar { width: 80px; height: 4px; background: var(--glass-border); border-radius: var(--radius-full); overflow: hidden; }
+.genre-legend-fill { height: 100%; border-radius: var(--radius-full); }
+
+/* ── Credential Row ── */
+.cred-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid var(--glass-border);
+}
+.cred-row:last-child { border-bottom: none; }
+.cred-label { font-size: var(--font-size-xs); color: var(--theme-text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+.cred-value { font-size: var(--font-size-sm); font-weight: 600; color: var(--theme-text); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .profile-hero-content { flex-direction: column; align-items: center; text-align: center; }
+    .profile-quick-stats { justify-content: center; }
+    .genre-overview { grid-template-columns: 1fr; }
+    .profile-avatar-xl { width: 100px; height: 100px; font-size: 2.2rem; }
+    .profile-hero-name { font-size: var(--font-size-3xl); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page" id="profilePage">
+    <!-- Loading skeleton -->
+    <div id="profileSkeleton">
+        <div style="padding: calc(var(--navbar-height) + 40px) var(--space-xl) var(--space-2xl); max-width:var(--container-max); margin:0 auto;">
+            <div style="display:flex;gap:var(--space-2xl);align-items:flex-end;flex-wrap:wrap;">
+                <div class="skeleton" style="width:130px;height:130px;border-radius:50%;flex-shrink:0;"></div>
+                <div style="flex:1;">
+                    <div class="skeleton skeleton-text lg" style="width:260px;height:40px;margin-bottom:var(--space-md);"></div>
+                    <div class="skeleton skeleton-text" style="width:180px;margin-bottom:var(--space-sm);"></div>
+                    <div class="skeleton skeleton-text sm" style="width:220px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loaded content (hidden until data ready) -->
+    <div id="profileLoaded" style="display:none;">
+
+        <!-- ── Hero ── -->
+        <div class="profile-hero">
+            <div class="profile-hero-backdrop"></div>
+            <div class="profile-hero-content">
+
+                <!-- Avatar -->
+                <div class="profile-avatar-zone">
+                    <div class="profile-avatar-xl" id="avatarCircle"
+                         onclick="document.getElementById('avatarFileInput').click()">
+                        <span id="profileInitials">U</span>
+                        <img id="profileAvatarImg" alt="Avatar">
+                        <div class="avatar-hover-overlay">
+                            <i class="fas fa-camera"></i>
+                            <span>Change</span>
+                        </div>
+                    </div>
+                    <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/gif,image/webp"
+                           style="display:none;" onchange="handleAvatarUpload(this)">
+                </div>
+
+                <!-- Hero Info -->
+                <div class="profile-hero-info fade-in">
+                    <h1 class="profile-hero-name" id="heroName">—</h1>
+                    <p class="profile-hero-handle" id="heroHandle">@—</p>
+                    <p class="profile-hero-email" id="heroEmail"><i class="fas fa-envelope" style="margin-right:6px;opacity:0.5;"></i>—</p>
+                    <p class="profile-hero-bio" id="heroBio" style="display:none;"></p>
+                    <p class="profile-hero-meta" id="heroMeta"></p>
+                    <div class="profile-quick-stats">
+                        <div class="pqs-item">
+                            <span class="pqs-value" id="pqsWatched">0</span>
+                            <span class="pqs-label">Watched</span>
+                        </div>
+                        <div class="pqs-item">
+                            <span class="pqs-value" id="pqsCompleted">0</span>
+                            <span class="pqs-label">Completed</span>
+                        </div>
+                        <div class="pqs-item">
+                            <span class="pqs-value" id="pqsHours">0h</span>
+                            <span class="pqs-label">Watch Time</span>
+                        </div>
+                        <div class="pqs-item">
+                            <span class="pqs-value" id="pqsGenres">0</span>
+                            <span class="pqs-label">Genres</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Tab Navigation ── -->
+        <div class="profile-tabs-nav">
+            <button class="ptab active" onclick="switchTab('overview', this)">
+                <i class="fas fa-chart-pie"></i> Overview
+            </button>
+            <button class="ptab" onclick="switchTab('account', this)">
+                <i class="fas fa-user-edit"></i> Account
+            </button>
+            <button class="ptab" onclick="switchTab('security', this)">
+                <i class="fas fa-lock"></i> Security
+            </button>
+            <button class="ptab" onclick="switchTab('history', this)">
+                <i class="fas fa-history"></i> History
+            </button>
+            <button class="ptab" onclick="switchTab('watchlist', this)">
+                <i class="fas fa-bookmark"></i> Watchlist
+            </button>
+            <button class="ptab" onclick="switchTab('reviews', this)">
+                <i class="fas fa-star"></i> My Reviews
+            </button>
+        </div>
+
+        <!-- ── Tab Panels ── -->
+        <div class="profile-content">
+
+            <!-- ══ OVERVIEW ══ -->
+            <div class="tab-panel active" id="tab-overview">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-xl);margin-bottom:var(--space-xl);">
+
+                    <!-- Genre Breakdown -->
+                    <div class="profile-card">
+                        <h3 class="profile-card-title"><i class="fas fa-chart-pie" style="color:var(--theme-primary);"></i> Genre Breakdown</h3>
+                        <div class="genre-overview" id="genreOverview">
+                            <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);grid-column:1/-1;text-align:center;padding:var(--space-xl) 0;">
+                                No genre data yet — start watching!
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Credentials Summary -->
+                    <div class="profile-card">
+                        <h3 class="profile-card-title"><i class="fas fa-id-card" style="color:var(--theme-primary);"></i> Credentials</h3>
+                        <div id="credentialsOverview"></div>
+                    </div>
+                </div>
+
+                <!-- Recent History strip -->
+                <div class="profile-card">
+                    <h3 class="profile-card-title">
+                        <i class="fas fa-clock" style="color:var(--theme-primary);"></i> Recently Watched
+                        <a href="#" onclick="switchTab('history', document.querySelectorAll('.ptab')[3]); return false;"
+                           style="margin-left:auto;font-size:var(--font-size-xs);font-weight:500;color:var(--theme-primary);">
+                            See all <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </h3>
+                    <div class="carousel stagger-children" id="recentHistoryCarousel" style="gap:var(--space-md);padding:var(--space-sm) 0;"></div>
+                </div>
+            </div>
+
+            <!-- ══ ACCOUNT ══ -->
+            <div class="tab-panel" id="tab-account">
+                <div style="max-width:640px;margin:0 auto;">
+
+                    <!-- Avatar Upload Card -->
+                    <div class="profile-card">
+                        <h3 class="profile-card-title"><i class="fas fa-camera" style="color:var(--theme-primary);"></i> Profile Picture</h3>
+                        <div style="display:flex;gap:var(--space-xl);align-items:center;flex-wrap:wrap;">
+                            <div class="profile-avatar-xl" style="width:90px;height:90px;font-size:2rem;cursor:default;" id="accountAvatarPreview">
+                                <span id="accountInitials">U</span>
+                                <img id="accountAvatarImg" alt="Avatar">
+                            </div>
+                            <div style="flex:1;">
+                                <div class="avatar-drop-zone" id="avatarDropZone"
+                                     onclick="document.getElementById('avatarFileInput2').click()"
+                                     ondragover="event.preventDefault(); this.classList.add('dragover')"
+                                     ondragleave="this.classList.remove('dragover')"
+                                     ondrop="handleAvatarDrop(event)">
+                                    <img class="drop-preview" id="dropPreview" alt="Preview">
+                                    <i class="fas fa-cloud-upload-alt" id="dropIcon"></i>
+                                    <p id="dropText">Drop your photo here, or <strong>click to browse</strong></p>
+                                    <small>JPEG, PNG, GIF or WebP · Max 5 MB</small>
+                                </div>
+                                <input type="file" id="avatarFileInput2" accept="image/jpeg,image/png,image/gif,image/webp"
+                                       style="display:none;" onchange="previewAvatarFile(this)">
+                                <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-sm);">
+                                    <button class="btn btn-primary" id="uploadAvatarBtn" onclick="submitAvatarUpload()" style="display:none;">
+                                        <i class="fas fa-upload"></i> Upload Photo
+                                    </button>
+                                    <button class="btn btn-ghost" onclick="clearAvatarPreview()" id="cancelAvatarBtn" style="display:none;">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Info Card -->
+                    <div class="profile-card">
+                        <h3 class="profile-card-title"><i class="fas fa-user" style="color:var(--theme-primary);"></i> Profile Information</h3>
+                        <form onsubmit="saveProfileInfo(event)" id="profileInfoForm">
+                            <div class="form-group">
+                                <label class="form-label">Display Name</label>
+                                <input type="text" class="form-input" id="editDisplayName" placeholder="How should we call you?">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Bio <span style="color:var(--theme-text-muted);font-weight:400;">(optional)</span></label>
+                                <textarea class="form-input" id="editBio" rows="3"
+                                          placeholder="Tell us a little about yourself..."
+                                          maxlength="500" oninput="updateBioCount(this)"></textarea>
+                                <div style="text-align:right;font-size:var(--font-size-xs);color:var(--theme-text-muted);margin-top:4px;">
+                                    <span id="bioCount">0</span>/500
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Favorite Genre</label>
+                                <select class="form-input" id="editFavoriteGenre">
+                                    <option value="">— Select Genre —</option>
+                                    <option value="Action">Action</option>
+                                    <option value="Comedy">Comedy</option>
+                                    <option value="Drama">Drama</option>
+                                    <option value="Horror">Horror</option>
+                                    <option value="Sci-Fi">Sci-Fi</option>
+                                    <option value="Romance">Romance</option>
+                                    <option value="Thriller">Thriller</option>
+                                    <option value="Animation">Animation</option>
+                                    <option value="Documentary">Documentary</option>
+                                    <option value="Fantasy">Fantasy</option>
+                                    <option value="Adventure">Adventure</option>
+                                    <option value="Mystery">Mystery</option>
+                                </select>
+                            </div>
+                            <div id="profileInfoError" class="form-error" style="display:none;"></div>
+                            <button type="submit" class="btn btn-primary" id="saveInfoBtn">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Contact Info Card -->
+                    <div class="profile-card">
+                        <h3 class="profile-card-title"><i class="fas fa-envelope" style="color:var(--theme-primary);"></i> Contact Information</h3>
+                        <form onsubmit="saveContactInfo(event)" id="contactInfoForm">
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-input" id="editEmail" placeholder="your@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Username <span style="color:var(--theme-text-muted);font-weight:400;">(cannot be changed)</span></label>
+                                <input type="text" class="form-input" id="editUsername" disabled
+                                       style="opacity:0.5;cursor:not-allowed;">
+                            </div>
+                            <div id="contactInfoError" class="form-error" style="display:none;"></div>
+                            <button type="submit" class="btn btn-primary" id="saveContactBtn">
+                                <i class="fas fa-save"></i> Update Email
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SECURITY ══ -->
+            <div class="tab-panel" id="tab-security">
+                <div style="max-width:500px;margin:0 auto;">
+
+                    <div class="profile-card">
+                        <h3 class="profile-card-title"><i class="fas fa-lock" style="color:var(--theme-primary);"></i> Change Password</h3>
+                        <p style="color:var(--theme-text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-xl);">
+                            Your password must be at least 8 characters and include one uppercase letter and one digit.
+                        </p>
+                        <form onsubmit="submitPasswordChange(event)" id="passwordForm">
+                            <div class="form-group">
+                                <label class="form-label">Current Password</label>
+                                <div style="position:relative;">
+                                    <input type="password" class="form-input" id="oldPassword"
+                                           placeholder="Enter current password" autocomplete="current-password">
+                                    <button type="button" class="icon-btn"
+                                            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--theme-text-muted);"
+                                            onclick="togglePwd('oldPassword', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">New Password</label>
+                                <div style="position:relative;">
+                                    <input type="password" class="form-input" id="newPassword"
+                                           placeholder="Min 8 chars, 1 uppercase, 1 digit"
+                                           autocomplete="new-password"
+                                           oninput="checkPasswordStrength(this.value)">
+                                    <button type="button" class="icon-btn"
+                                            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--theme-text-muted);"
+                                            onclick="togglePwd('newPassword', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="password-strength">
+                                    <div class="strength-bar">
+                                        <div class="strength-fill" id="strengthFill"></div>
+                                    </div>
+                                    <span class="strength-text" id="strengthText"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Confirm New Password</label>
+                                <div style="position:relative;">
+                                    <input type="password" class="form-input" id="confirmPassword"
+                                           placeholder="Repeat new password"
+                                           autocomplete="new-password"
+                                           oninput="checkPasswordMatch()">
+                                    <button type="button" class="icon-btn"
+                                            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--theme-text-muted);"
+                                            onclick="togglePwd('confirmPassword', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p id="matchMsg" style="font-size:var(--font-size-xs);margin-top:4px;display:none;"></p>
+                            </div>
+                            <div id="pwdFormError" class="form-error" style="display:none;"></div>
+                            <button type="submit" class="btn btn-primary btn-lg" id="changePwdBtn" style="width:100%;">
+                                <i class="fas fa-key"></i> Update Password
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Account Danger Zone -->
+                    <div class="profile-card" style="border-color:rgba(239,68,68,0.2);">
+                        <h3 class="profile-card-title" style="color:#ef4444;">
+                            <i class="fas fa-exclamation-triangle"></i> Account Status
+                        </h3>
+                        <div class="cred-row">
+                            <div>
+                                <div class="cred-label">Account Status</div>
+                                <div class="cred-value" id="secAccountStatus">Active ✓</div>
+                            </div>
+                        </div>
+                        <div class="cred-row">
+                            <div>
+                                <div class="cred-label">Member Since</div>
+                                <div class="cred-value" id="secMemberSince">—</div>
+                            </div>
+                        </div>
+                        <div class="cred-row">
+                            <div>
+                                <div class="cred-label">Role</div>
+                                <div class="cred-value" id="secRole">User</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:var(--space-lg);">
+                            <button class="btn btn-danger" style="width:100%;" onclick="confirmLogoutAll()">
+                                <i class="fas fa-sign-out-alt"></i> Sign Out Everywhere
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ HISTORY ══ -->
+            <div class="tab-panel" id="tab-history">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
+                    <div>
+                        <h2 style="font-size:var(--font-size-2xl);font-weight:800;">Watch History</h2>
+                        <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:4px;" id="historySubtitle"></p>
+                    </div>
+                    <div style="display:flex;gap:var(--space-sm);">
+                        <select class="form-input" id="historySort" style="width:auto;padding:var(--space-xs) var(--space-md);border-radius:var(--radius-full);font-size:var(--font-size-sm);"
+                                onchange="sortHistory()">
+                            <option value="recent">Most Recent</option>
+                            <option value="progress">By Progress</option>
+                            <option value="az">A–Z</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="movie-grid stagger-children" id="historyGrid"></div>
+                <div class="history-empty" id="historyEmpty" style="display:none;">
+                    <i class="fas fa-film"></i>
+                    <p style="font-size:var(--font-size-lg);font-weight:600;margin-bottom:var(--space-sm);">No watch history yet</p>
+                    <p style="font-size:var(--font-size-sm);">Movies you watch will appear here</p>
+                    <a href="/browse/" class="btn btn-primary" style="margin-top:var(--space-xl);">Start Browsing</a>
+                </div>
+            </div>
+
+            <!-- ══ WATCHLIST ══ -->
+            <div class="tab-panel" id="tab-watchlist">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xl);">
+                    <div>
+                        <h2 style="font-size:var(--font-size-2xl);font-weight:800;">My Watchlist</h2>
+                        <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:4px;" id="watchlistSubtitle"></p>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" onclick="clearWatchlist()" id="clearWatchlistBtn" style="display:none;">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+                <div class="movie-grid stagger-children" id="watchlistGrid"></div>
+                <div class="history-empty" id="watchlistEmpty" style="display:none;">
+                    <i class="fas fa-bookmark"></i>
+                    <p style="font-size:var(--font-size-lg);font-weight:600;margin-bottom:var(--space-sm);">Your watchlist is empty</p>
+                    <p style="font-size:var(--font-size-sm);">Save movies to watch later</p>
+                    <a href="/browse/" class="btn btn-primary" style="margin-top:var(--space-xl);">Discover Movies</a>
+                </div>
+            </div>
+
+            <!-- ══ MY REVIEWS ══ -->
+            <div class="tab-panel" id="tab-reviews">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xl);">
+                    <div>
+                        <h2 style="font-size:var(--font-size-2xl);font-weight:800;">My Reviews</h2>
+                        <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:4px;" id="reviewsSubtitle"></p>
+                    </div>
+                </div>
+                <div id="myReviewsList"></div>
+                <div class="history-empty" id="reviewsEmpty" style="display:none;">
+                    <i class="fas fa-star"></i>
+                    <p style="font-size:var(--font-size-lg);font-weight:600;margin-bottom:var(--space-sm);">No reviews yet</p>
+                    <p style="font-size:var(--font-size-sm);">Share your thoughts on movies you've watched</p>
+                    <a href="/browse/" class="btn btn-primary" style="margin-top:var(--space-xl);">Browse Movies</a>
+                </div>
+            </div>
+
+        </div><!-- /.profile-content -->
+    </div><!-- /#profileLoaded -->
+</div><!-- /#profilePage -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ─────────────────────────────────────────────
+   Flick Profile — Full Feature Implementation
+   ───────────────────────────────────────────── */
+
+const GENRE_COLORS = [
+    '#6366f1','#f59e0b','#10b981','#ec4899',
+    '#06b6d4','#f43f5e','#8b5cf6','#14b8a6',
+    '#f97316','#a3e635',
+];
+
+let profileData = null;   // stats from API
+let historyData = [];     // watch history raw array
+let pendingAvatarFile = null; // file staged for upload
+
+// ═══════════════════════════════════════════
+// ENTRY — called on DOMContentLoaded
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', loadProfilePage);
+
+async function loadProfilePage() {
+    try {
+        // Directly call the API — no dependency on currentUser race condition.
+        // If cookie is valid the server responds; if not, it returns 401.
+        const stats = await API.auth.stats();
+        profileData = stats;
+        renderHero(stats);
+        renderOverview(stats);
+        renderCredentialsOverview(stats.user);
+        populateAccountForms(stats.user);
+        populateSecurityInfo(stats.user);
+        loadHistory();
+        loadWatchlistTab();
+
+        // Apply theme from favorite genre color
+        const idx = GENRE_COLORS.indexOf(GENRE_COLORS[0]);
+        document.documentElement.style.setProperty('--theme-primary-rgb',
+            '99, 102, 241'); // keep default unless we have poster
+
+        document.getElementById('profileSkeleton').style.display = 'none';
+        document.getElementById('profileLoaded').style.display = 'block';
+    } catch (e) {
+        if (e.status === 401 || e.status === 403) {
+            navigateTo('/login/');
+        } else {
+            document.getElementById('profileSkeleton').innerHTML = `
+                <div style="text-align:center;padding:120px var(--space-xl);">
+                    <div style="font-size:3rem;margin-bottom:var(--space-lg);opacity:0.3;">⚠️</div>
+                    <h2>Could not load profile</h2>
+                    <p style="color:var(--theme-text-secondary);margin-top:var(--space-md);">
+                        ${escapeHtml(e.error || 'Please try again later.')}
+                    </p>
+                    <button class="btn btn-primary" style="margin-top:var(--space-xl);" onclick="location.reload()">
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════
+// RENDER HERO
+// ═══════════════════════════════════════════
+function renderHero(stats) {
+    const user = stats.user;
+    const initials = user.initials || (user.display_name || user.username || 'U')[0].toUpperCase();
+
+    // Avatar circle
+    document.getElementById('profileInitials').textContent = initials;
+    const avatarImg = document.getElementById('profileAvatarImg');
+    if (user.avatar_display) {
+        avatarImg.src = user.avatar_display;
+        avatarImg.style.display = 'block';
+        document.getElementById('profileInitials').style.display = 'none';
+    }
+
+    // Name with role badge
+    let roleBadge = '';
+    if (user.is_admin) {
+        roleBadge = '<span class="admin-badge"><i class="fas fa-shield-alt"></i> Admin</span>';
+    } else if (user.has_super_access) {
+        roleBadge = '<span class="super-badge"><i class="fas fa-crown"></i> Super Access</span>';
+    }
+    document.getElementById('heroName').innerHTML = escapeHtml(user.display_name || user.username) + roleBadge;
+
+    document.getElementById('heroHandle').textContent = '@' + user.username;
+    document.getElementById('heroEmail').innerHTML =
+        `<i class="fas fa-envelope" style="margin-right:6px;opacity:0.5;"></i>${escapeHtml(user.email)}`;
+
+    if (user.bio) {
+        const bioEl = document.getElementById('heroBio');
+        bioEl.textContent = user.bio;
+        bioEl.style.display = 'block';
+    }
+
+    const joined = new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    const accessIcon = user.is_admin || user.has_super_access ? '∞' : '🎬';
+    document.getElementById('heroMeta').innerHTML =
+        `🚀 Member since ${joined}` +
+        (user.favorite_genre ? ` · ❤️ ${escapeHtml(user.favorite_genre)}` : '') +
+        ` · ${accessIcon} ${user.is_admin ? 'Unlimited' : user.has_super_access ? 'Unlimited' : 'Standard'} access`;
+
+    // Quick stats
+    document.getElementById('pqsWatched').textContent = stats.total_watched || 0;
+    document.getElementById('pqsCompleted').textContent = stats.completed || 0;
+    document.getElementById('pqsHours').textContent = (stats.total_watch_time_hours || 0) + 'h';
+    document.getElementById('pqsGenres').textContent = (stats.genre_breakdown || []).length;
+}
+
+// ═══════════════════════════════════════════
+// RENDER OVERVIEW TAB
+// ═══════════════════════════════════════════
+function renderOverview(stats) {
+    const genres = stats.genre_breakdown || [];
+
+    if (genres.length > 0) {
+        const maxCount = Math.max(...genres.map(g => g.watch_count));
+
+        // Build donut + legend side by side
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 160;
+        canvas.style.flexShrink = '0';
+
+        drawDonutChart(canvas,
+            genres.map(g => ({ label: g.genre, value: g.watch_count })),
+            GENRE_COLORS
+        );
+
+        const legend = document.createElement('div');
+        legend.className = 'genre-legend-list';
+        legend.innerHTML = genres.slice(0, 8).map((g, i) => `
+            <div class="genre-legend-row">
+                <div class="genre-legend-dot" style="background:${GENRE_COLORS[i % GENRE_COLORS.length]};"></div>
+                <span class="genre-legend-name">${escapeHtml(g.genre)}</span>
+                <div class="genre-legend-bar">
+                    <div class="genre-legend-fill"
+                         style="width:${Math.round((g.watch_count/maxCount)*100)}%;background:${GENRE_COLORS[i % GENRE_COLORS.length]};"></div>
+                </div>
+                <span class="genre-legend-count">${g.watch_count}</span>
+            </div>
+        `).join('');
+
+        const container = document.getElementById('genreOverview');
+        container.innerHTML = '';
+        container.appendChild(canvas);
+        container.appendChild(legend);
+    }
+
+    // Recent history carousel
+    loadRecentHistory();
+}
+
+async function loadRecentHistory() {
+    try {
+        const history = await API.auth.watchHistory();
+        historyData = history || [];
+        const carousel = document.getElementById('recentHistoryCarousel');
+
+        if (history.length === 0) {
+            carousel.innerHTML = `<p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);padding:var(--space-md) 0;">No history yet.</p>`;
+            return;
+        }
+
+        carousel.innerHTML = history.slice(0, 10).map(h => `
+            <div class="movie-card" style="min-width:160px;max-width:160px;"
+                 onclick="navigateTo('/movie/movie-${h.movie_id}/')">
+                <img class="movie-card-poster"
+                     src="${escapeHtml(h.movie_poster || '/static/img/default-poster.svg')}"
+                     alt="${escapeHtml(h.movie_title)}" loading="lazy">
+                <div class="movie-card-overlay">
+                    <div class="movie-card-title">${escapeHtml(h.movie_title)}</div>
+                    <div class="movie-card-meta"><span>${Math.round(h.progress)}%</span></div>
+                </div>
+                <div class="movie-card-progress">
+                    <div class="movie-card-progress-bar" style="width:${h.progress}%"></div>
+                </div>
+            </div>
+        `).join('');
+    } catch {}
+}
+
+// ═══════════════════════════════════════════
+// CREDENTIALS OVERVIEW (in Overview tab)
+// ═══════════════════════════════════════════
+function renderCredentialsOverview(user) {
+    // Determine access type
+    const accessType = user.is_admin 
+        ? '<span style="color:#10b981;"><i class="fas fa-shield-alt"></i> Admin</span> <span style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">(Unlimited Access)</span>'
+        : user.has_super_access 
+        ? '<span style="color:#8b5cf6;"><i class="fas fa-crown"></i> Super Access</span> <span style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">(Unlimited Access)</span>'
+        : '<span style="color:var(--theme-text-secondary);"><i class="fas fa-user"></i> Standard</span> <span style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">(Pay per movie)</span>';
+
+    document.getElementById('credentialsOverview').innerHTML = `
+        <div class="cred-row">
+            <div>
+                <div class="cred-label">Display Name</div>
+                <div class="cred-value">${escapeHtml(user.display_name || '—')}</div>
+            </div>
+            <button class="btn btn-sm btn-ghost" onclick="switchTab('account', document.querySelectorAll('.ptab')[1])">
+                <i class="fas fa-edit"></i>
+            </button>
+        </div>
+        <div class="cred-row">
+            <div>
+                <div class="cred-label">Username</div>
+                <div class="cred-value">@${escapeHtml(user.username)}</div>
+            </div>
+        </div>
+        <div class="cred-row">
+            <div>
+                <div class="cred-label">Email</div>
+                <div class="cred-value">${escapeHtml(user.email)}</div>
+            </div>
+            <button class="btn btn-sm btn-ghost" onclick="switchTab('account', document.querySelectorAll('.ptab')[1])">
+                <i class="fas fa-edit"></i>
+            </button>
+        </div>
+        <div class="cred-row">
+            <div>
+                <div class="cred-label">Password</div>
+                <div class="cred-value">••••••••</div>
+            </div>
+            <button class="btn btn-sm btn-ghost" onclick="switchTab('security', document.querySelectorAll('.ptab')[2])">
+                <i class="fas fa-key"></i>
+            </button>
+        </div>
+        <div class="cred-row">
+            <div>
+                <div class="cred-label">Favorite Genre</div>
+                <div class="cred-value">${escapeHtml(user.favorite_genre || 'Not set')}</div>
+            </div>
+        </div>
+        <div class="cred-row" style="background:${user.is_admin || user.has_super_access ? 'rgba(139,92,246,0.05)' : 'transparent'};margin:-var(--space-sm);padding:var(--space-sm);border-radius:var(--radius-md);">
+            <div>
+                <div class="cred-label">Access Type</div>
+                <div class="cred-value">${accessType}</div>
+            </div>
+            ${!user.is_admin && !user.has_super_access ? `
+            <span style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">
+                <i class="fas fa-info-circle"></i> Request access per movie
+            </span>
+            ` : ''}
+        </div>
+    `;
+}
+
+// ═══════════════════════════════════════════
+// POPULATE ACCOUNT FORMS
+// ═══════════════════════════════════════════
+function populateAccountForms(user) {
+    document.getElementById('editDisplayName').value = user.display_name || '';
+    document.getElementById('editBio').value = user.bio || '';
+    document.getElementById('bioCount').textContent = (user.bio || '').length;
+    document.getElementById('editFavoriteGenre').value = user.favorite_genre || '';
+    document.getElementById('editEmail').value = user.email || '';
+    document.getElementById('editUsername').value = user.username || '';
+
+    // Account tab avatar preview
+    const initials = user.initials || (user.display_name || user.username || 'U')[0].toUpperCase();
+    document.getElementById('accountInitials').textContent = initials;
+    const accImg = document.getElementById('accountAvatarImg');
+    if (user.avatar_display) {
+        accImg.src = user.avatar_display;
+        accImg.style.display = 'block';
+        document.getElementById('accountInitials').style.display = 'none';
+    }
+}
+
+function populateSecurityInfo(user) {
+    document.getElementById('secAccountStatus').textContent = user.is_active ? 'Active ✓' : 'Banned ✗';
+    document.getElementById('secAccountStatus').style.color = user.is_active ? '#10b981' : '#ef4444';
+    document.getElementById('secMemberSince').textContent =
+        new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('secRole').textContent = user.is_admin ? '🛡️ Admin' : '👤 User';
+}
+
+// ═══════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════
+function switchTab(tabName, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+
+    const panel = document.getElementById('tab-' + tabName);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+
+    // Lazy-load history/watchlist when tab opens
+    if (tabName === 'history') renderHistoryGrid();
+    if (tabName === 'watchlist') loadWatchlistTab();
+    if (tabName === 'reviews') loadMyReviewsTab();
+}
+
+// ═══════════════════════════════════════════
+// AVATAR UPLOAD
+// ═══════════════════════════════════════════
+// Clicking the hero avatar
+function handleAvatarUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    pendingAvatarFile = file;
+
+    // Preview in hero
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = document.getElementById('profileAvatarImg');
+        img.src = e.target.result;
+        img.style.display = 'block';
+        document.getElementById('profileInitials').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+
+    // Switch to Account tab and pre-fill the drop zone
+    switchTab('account', document.querySelectorAll('.ptab')[1]);
+    populateDropZoneWithFile(file);
+}
+
+// Drop zone in account tab
+function previewAvatarFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    populateDropZoneWithFile(file);
+}
+
+function populateDropZoneWithFile(file) {
+    pendingAvatarFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const preview = document.getElementById('dropPreview');
+        preview.src = e.target.result;
+        preview.classList.add('visible');
+        document.getElementById('dropIcon').style.display = 'none';
+        document.getElementById('dropText').textContent = file.name;
+        document.getElementById('uploadAvatarBtn').style.display = 'inline-flex';
+        document.getElementById('cancelAvatarBtn').style.display = 'inline-flex';
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearAvatarPreview() {
+    pendingAvatarFile = null;
+    const preview = document.getElementById('dropPreview');
+    preview.src = '';
+    preview.classList.remove('visible');
+    document.getElementById('dropIcon').style.display = 'block';
+    document.getElementById('dropText').innerHTML = 'Drop your photo here, or <strong>click to browse</strong>';
+    document.getElementById('uploadAvatarBtn').style.display = 'none';
+    document.getElementById('cancelAvatarBtn').style.display = 'none';
+    document.getElementById('avatarFileInput2').value = '';
+}
+
+function handleAvatarDrop(e) {
+    e.preventDefault();
+    document.getElementById('avatarDropZone').classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    populateDropZoneWithFile(file);
+}
+
+async function submitAvatarUpload() {
+    if (!pendingAvatarFile) return;
+
+    const btn = document.getElementById('uploadAvatarBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+
+    try {
+        const result = await API.auth.uploadAvatar(pendingAvatarFile);
+        showToast('Profile picture updated! 📸', 'success');
+
+        // Update all avatar displays
+        const url = result.avatar_display || result.user?.avatar_display;
+        if (url) {
+            ['profileAvatarImg', 'accountAvatarImg'].forEach(id => {
+                const img = document.getElementById(id);
+                if (img) {
+                    img.src = url;
+                    img.style.display = 'block';
+                }
+            });
+            ['profileInitials', 'accountInitials'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+            // Update nav avatar ring initial if ColorThief can pick a color
+            ThemeEngine.extractAndApply(url);
+        }
+
+        // Update currentUser
+        if (result.user) {
+            currentUser = result.user;
+            // Re-render overview credentials
+            renderCredentialsOverview(result.user);
+        }
+
+        clearAvatarPreview();
+    } catch (err) {
+        showToast(err.error || 'Upload failed. Max 5 MB, images only.', 'error');
+        btn.innerHTML = '<i class="fas fa-upload"></i> Upload Photo';
+        btn.disabled = false;
+    }
+}
+
+// ═══════════════════════════════════════════
+// PROFILE INFO FORM
+// ═══════════════════════════════════════════
+function updateBioCount(textarea) {
+    document.getElementById('bioCount').textContent = textarea.value.length;
+}
+
+async function saveProfileInfo(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveInfoBtn');
+    const err = document.getElementById('profileInfoError');
+    err.style.display = 'none';
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+
+    try {
+        const updated = await API.auth.updateProfile({
+            display_name: document.getElementById('editDisplayName').value.trim(),
+            bio: document.getElementById('editBio').value.trim(),
+            favorite_genre: document.getElementById('editFavoriteGenre').value,
+        });
+
+        // Sync hero
+        currentUser = updated;
+        let roleBadge = '';
+        if (updated.is_admin) {
+            roleBadge = '<span class="admin-badge"><i class="fas fa-shield-alt"></i> Admin</span>';
+        } else if (updated.has_super_access) {
+            roleBadge = '<span class="super-badge"><i class="fas fa-crown"></i> Super Access</span>';
+        }
+        document.getElementById('heroName').innerHTML = escapeHtml(updated.display_name || updated.username) + roleBadge;
+
+        const bioEl = document.getElementById('heroBio');
+        if (updated.bio) { bioEl.textContent = updated.bio; bioEl.style.display = 'block'; }
+        else bioEl.style.display = 'none';
+
+        renderCredentialsOverview(updated);
+        showToast('Profile updated! ✅', 'success');
+    } catch (ex) {
+        const msg = ex.error || ex.display_name?.[0] || ex.bio?.[0] || 'Update failed';
+        err.textContent = msg;
+        err.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    }
+}
+
+// ═══════════════════════════════════════════
+// CONTACT INFO FORM
+// ═══════════════════════════════════════════
+async function saveContactInfo(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveContactBtn');
+    const err = document.getElementById('contactInfoError');
+    err.style.display = 'none';
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+
+    try {
+        const updated = await API.auth.updateProfile({
+            email: document.getElementById('editEmail').value.trim(),
+        });
+        currentUser = updated;
+        document.getElementById('heroEmail').innerHTML =
+            `<i class="fas fa-envelope" style="margin-right:6px;opacity:0.5;"></i>${escapeHtml(updated.email)}`;
+        renderCredentialsOverview(updated);
+        showToast('Email updated! ✅', 'success');
+    } catch (ex) {
+        const msg = ex.error || ex.email?.[0] || 'Update failed';
+        err.textContent = msg;
+        err.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Update Email';
+    }
+}
+
+// ═══════════════════════════════════════════
+// PASSWORD CHANGE
+// ═══════════════════════════════════════════
+function togglePwd(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+function checkPasswordStrength(value) {
+    const fill = document.getElementById('strengthFill');
+    const text = document.getElementById('strengthText');
+    let score = 0;
+    if (value.length >= 8) score++;
+    if (/[A-Z]/.test(value)) score++;
+    if (/[0-9]/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value)) score++;
+    if (value.length >= 12) score++;
+
+    const levels = [
+        { pct: '0%',   color: 'transparent', label: '' },
+        { pct: '25%',  color: '#ef4444',      label: 'Too weak' },
+        { pct: '50%',  color: '#f59e0b',      label: 'Fair' },
+        { pct: '75%',  color: '#06b6d4',      label: 'Good' },
+        { pct: '90%',  color: '#10b981',      label: 'Strong' },
+        { pct: '100%', color: '#10b981',      label: 'Very strong ✓' },
+    ];
+
+    const level = levels[Math.min(score, 5)];
+    fill.style.width = level.pct;
+    fill.style.background = level.color;
+    text.textContent = level.label;
+    text.style.color = level.color;
+
+    checkPasswordMatch();
+}
+
+function checkPasswordMatch() {
+    const pwd = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const msg = document.getElementById('matchMsg');
+    if (!confirm) { msg.style.display = 'none'; return; }
+    msg.style.display = 'block';
+    if (pwd === confirm) {
+        msg.textContent = '✓ Passwords match';
+        msg.style.color = '#10b981';
+    } else {
+        msg.textContent = '✗ Passwords do not match';
+        msg.style.color = '#ef4444';
+    }
+}
+
+async function submitPasswordChange(e) {
+    e.preventDefault();
+    const btn = document.getElementById('changePwdBtn');
+    const err = document.getElementById('pwdFormError');
+    err.style.display = 'none';
+
+    const oldPwd = document.getElementById('oldPassword').value;
+    const newPwd = document.getElementById('newPassword').value;
+    const confirmPwd = document.getElementById('confirmPassword').value;
+
+    if (!oldPwd || !newPwd || !confirmPwd) {
+        err.textContent = 'Please fill in all fields.';
+        err.style.display = 'block';
+        return;
+    }
+    if (newPwd !== confirmPwd) {
+        err.textContent = 'New passwords do not match.';
+        err.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+
+    try {
+        await API.auth.changePassword({
+            old_password: oldPwd,
+            new_password: newPwd,
+            confirm_password: confirmPwd,
+        });
+        showToast('Password changed successfully! 🔐', 'success');
+        document.getElementById('passwordForm').reset();
+        document.getElementById('strengthFill').style.width = '0%';
+        document.getElementById('strengthText').textContent = '';
+        document.getElementById('matchMsg').style.display = 'none';
+    } catch (ex) {
+        const msg = ex.error || ex.new_password?.[0] || ex.confirm_password?.[0] || 'Failed to change password';
+        err.textContent = msg;
+        err.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-key"></i> Update Password';
+    }
+}
+
+function confirmLogoutAll() {
+    if (confirm('Sign out from all devices? You will need to log in again.')) {
+        logout();
+    }
+}
+
+// ═══════════════════════════════════════════
+// WATCH HISTORY TAB
+// ═══════════════════════════════════════════
+async function loadHistory() {
+    try {
+        const history = await API.auth.watchHistory();
+        historyData = history || [];
+    } catch { historyData = []; }
+}
+
+function renderHistoryGrid() {
+    const grid = document.getElementById('historyGrid');
+    const empty = document.getElementById('historyEmpty');
+    const subtitle = document.getElementById('historySubtitle');
+
+    if (!historyData.length) {
+        grid.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+
+    subtitle.textContent = `${historyData.length} movie${historyData.length !== 1 ? 's' : ''}`;
+    grid.style.display = '';
+    empty.style.display = 'none';
+
+    const sort = document.getElementById('historySort').value;
+    let sorted = [...historyData];
+    if (sort === 'progress') sorted.sort((a, b) => b.progress - a.progress);
+    else if (sort === 'az') sorted.sort((a, b) => a.movie_title.localeCompare(b.movie_title));
+
+    grid.innerHTML = sorted.map(h => `
+        <div class="movie-card hover-lift" onclick="navigateTo('/movie/movie-${h.movie_id}/')">
+            <img class="movie-card-poster"
+                 src="${escapeHtml(h.movie_poster || '/static/img/default-poster.svg')}"
+                 alt="${escapeHtml(h.movie_title)}" loading="lazy"
+                 onerror="this.src='/static/img/default-poster.svg'">
+            <div class="movie-card-overlay">
+                <div class="movie-card-title">${escapeHtml(h.movie_title)}</div>
+                <div class="movie-card-meta">
+                    <span>${Math.round(h.progress)}% watched</span>
+                    <span>${timeAgo(h.watched_at)}</span>
+                </div>
+            </div>
+            <div class="movie-card-progress">
+                <div class="movie-card-progress-bar" style="width:${h.progress}%"></div>
+            </div>
+            ${h.progress >= 95 ? '<div class="movie-card-play" style="background:rgba(16,185,129,0.8);"><i class="fas fa-check"></i></div>' : ''}
+        </div>
+    `).join('');
+    initCardTilt();
+}
+
+function sortHistory() { renderHistoryGrid(); }
+
+// ═══════════════════════════════════════════
+// WATCHLIST TAB
+// ═══════════════════════════════════════════
+async function loadWatchlistTab() {
+    const grid = document.getElementById('watchlistGrid');
+    const empty = document.getElementById('watchlistEmpty');
+    const subtitle = document.getElementById('watchlistSubtitle');
+    const clearBtn = document.getElementById('clearWatchlistBtn');
+
+    // Try server-side first, fallback to localStorage
+    let watchlist = [];
+    try {
+        const serverList = await API.auth.watchlist();
+        watchlist = serverList.map(item => ({
+            id: item.movie_id,
+            title: item.movie_title,
+            slug: item.movie_slug,
+            poster: item.movie_poster,
+            addedAt: item.added_at,
+        }));
+    } catch {
+        watchlist = Watchlist.get();
+    }
+
+    if (!watchlist.length) {
+        grid.style.display = 'none';
+        empty.style.display = 'block';
+        clearBtn.style.display = 'none';
+        return;
+    }
+
+    subtitle.textContent = `${watchlist.length} saved movie${watchlist.length !== 1 ? 's' : ''}`;
+    clearBtn.style.display = 'inline-flex';
+    grid.style.display = '';
+    empty.style.display = 'none';
+
+    grid.innerHTML = watchlist.map(m => `
+        <div class="movie-card hover-lift" onclick="navigateTo('/movie/${escapeHtml(m.slug)}/')">
+            <img class="movie-card-poster"
+                 src="${escapeHtml(m.poster || '/static/img/default-poster.svg')}"
+                 alt="${escapeHtml(m.title)}" loading="lazy"
+                 onerror="this.src='/static/img/default-poster.svg'">
+            <div class="movie-card-overlay">
+                <div class="movie-card-title">${escapeHtml(m.title)}</div>
+                <div class="movie-card-meta">
+                    <span>${timeAgo(m.addedAt)}</span>
+                </div>
+            </div>
+            <button class="movie-card-play"
+                    style="background:rgba(239,68,68,0.8);opacity:0;"
+                    title="Remove from watchlist"
+                    onclick="event.stopPropagation(); removeFromWatchlist(${m.id})">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+
+    // Show remove btn on hover
+    grid.querySelectorAll('.movie-card').forEach(card => {
+        const removeBtn = card.querySelector('.movie-card-play');
+        card.addEventListener('mouseenter', () => { if (removeBtn) removeBtn.style.opacity = '1'; });
+        card.addEventListener('mouseleave', () => { if (removeBtn) removeBtn.style.opacity = '0'; });
+    });
+}
+
+async function removeFromWatchlist(movieId) {
+    try {
+        await API.auth.removeFromWatchlist(movieId);
+    } catch {}
+    Watchlist.remove(movieId);
+    showToast('Removed from watchlist', 'info');
+    loadWatchlistTab();
+}
+
+async function clearWatchlist() {
+    if (!confirm('Clear your entire watchlist?')) return;
+    // Clear server-side
+    try {
+        const items = await API.auth.watchlist();
+        for (const item of items) {
+            await API.auth.removeFromWatchlist(item.movie_id);
+        }
+    } catch {}
+    localStorage.removeItem(Watchlist.key);
+    showToast('Watchlist cleared', 'info');
+    loadWatchlistTab();
+}
+
+// ═══════════════════════════════════════════
+// MY REVIEWS TAB
+// ═══════════════════════════════════════════
+async function loadMyReviewsTab() {
+    const list = document.getElementById('myReviewsList');
+    const empty = document.getElementById('reviewsEmpty');
+    const subtitle = document.getElementById('reviewsSubtitle');
+
+    list.innerHTML = '<div class="loading-dots" style="text-align:center;padding:var(--space-2xl);"><span></span><span></span><span></span></div>';
+
+    try {
+        const reviews = await API.catalog.myReviews();
+
+        if (!reviews || !reviews.length) {
+            list.style.display = 'none';
+            empty.style.display = 'block';
+            subtitle.textContent = '';
+            return;
+        }
+
+        empty.style.display = 'none';
+        list.style.display = 'block';
+        subtitle.textContent = `${reviews.length} review${reviews.length !== 1 ? 's' : ''}`;
+
+        // Calculate avg rating
+        const avgRating = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
+
+        list.innerHTML = `
+            <div style="display:flex;gap:var(--space-xl);margin-bottom:var(--space-xl);flex-wrap:wrap;">
+                <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--space-lg);text-align:center;min-width:120px;">
+                    <div style="font-size:2rem;font-weight:900;color:var(--theme-primary);">${reviews.length}</div>
+                    <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">Reviews</div>
+                </div>
+                <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--space-lg);text-align:center;min-width:120px;">
+                    <div style="font-size:2rem;font-weight:900;color:#f59e0b;">${avgRating}</div>
+                    <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">Avg Rating</div>
+                </div>
+                <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--space-lg);text-align:center;min-width:120px;">
+                    <div style="font-size:2rem;font-weight:900;color:#10b981;">${reviews.reduce((s, r) => s + (r.likes || 0), 0)}</div>
+                    <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">Total Likes</div>
+                </div>
+            </div>
+
+            ${reviews.map(r => {
+                const stars = '★'.repeat(Math.round(r.rating / 2)) + '☆'.repeat(5 - Math.round(r.rating / 2));
+                return `
+                <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--space-lg);margin-bottom:var(--space-md);transition:border-color 0.2s;"
+                     onmouseenter="this.style.borderColor='rgba(var(--theme-primary-rgb),0.3)'" onmouseleave="this.style.borderColor='var(--glass-border)'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:var(--space-sm);">
+                        <div>
+                            <a href="/movie/${escapeHtml(r.movie_slug || 'movie-' + r.movie)}/" style="font-weight:700;font-size:var(--font-size-lg);color:var(--theme-text);text-decoration:none;">
+                                ${escapeHtml(r.movie_title || 'Movie #' + r.movie)}
+                            </a>
+                            <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);margin-top:2px;">${timeAgo(r.created_at)}${r.updated_at !== r.created_at ? ' (edited)' : ''}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:var(--space-sm);">
+                            <span style="font-weight:800;font-size:var(--font-size-lg);color:var(--theme-primary);">${r.rating}</span>
+                            <span style="font-size:var(--font-size-sm);color:#f59e0b;">${stars}</span>
+                        </div>
+                    </div>
+                    ${r.title ? `<h4 style="margin-top:var(--space-sm);font-weight:600;">${escapeHtml(r.title)}</h4>` : ''}
+                    ${r.content ? `<p style="margin-top:var(--space-sm);color:var(--theme-text-secondary);line-height:1.6;font-size:var(--font-size-sm);">${escapeHtml(r.content)}</p>` : ''}
+                    <div style="display:flex;gap:var(--space-md);margin-top:var(--space-md);align-items:center;">
+                        <span style="font-size:var(--font-size-xs);color:var(--theme-text-muted);"><i class="fas fa-thumbs-up"></i> ${r.likes || 0} helpful</span>
+                        ${r.contains_spoilers ? '<span style="font-size:var(--font-size-xs);color:#f59e0b;"><i class="fas fa-exclamation-triangle"></i> Spoilers</span>' : ''}
+                        <button class="btn btn-sm btn-ghost" onclick="deleteProfileReview(${r.id})" style="margin-left:auto;font-size:var(--font-size-xs);color:#ef4444;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>`;
+            }).join('')}
+        `;
+    } catch (err) {
+        list.innerHTML = '<p style="text-align:center;color:var(--theme-text-muted);padding:var(--space-2xl);">Failed to load reviews</p>';
+        empty.style.display = 'none';
+    }
+}
+
+async function deleteProfileReview(reviewId) {
+    if (!confirm('Delete this review?')) return;
+    try {
+        await API.catalog.deleteReview(reviewId);
+        showToast('Review deleted', 'info');
+        loadMyReviewsTab();
+    } catch (err) { showToast(err.error || 'Failed to delete', 'error'); }
+}
+</script>
+{% endblock %}

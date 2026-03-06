@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Genre{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:var(--space-2xl);">
+    <div id="genrePage">
+        <div class="skeleton" style="height:200px;border-radius:var(--radius-lg);"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const genreSlug = '{{ slug }}';
+
+const genreMeta = {
+    'action': { icon: 'fa-fist-raised', color: '#ef4444', desc: 'Explosive thrills and adrenaline-pumping excitement' },
+    'comedy': { icon: 'fa-laugh-squint', color: '#f59e0b', desc: 'Lighthearted fun that will make you laugh out loud' },
+    'drama': { icon: 'fa-theater-masks', color: '#6366f1', desc: 'Powerful stories that touch the heart' },
+    'horror': { icon: 'fa-ghost', color: '#dc2626', desc: 'Spine-chilling scares and dark atmospheres' },
+    'sci-fi': { icon: 'fa-robot', color: '#06b6d4', desc: 'Explore the frontiers of science and imagination' },
+    'romance': { icon: 'fa-heart', color: '#ec4899', desc: 'Love stories that warm the soul' },
+    'thriller': { icon: 'fa-bolt', color: '#8b5cf6', desc: 'Edge-of-your-seat suspense and mystery' },
+    'animation': { icon: 'fa-palette', color: '#10b981', desc: 'Vibrant animated worlds and adventures' },
+    'documentary': { icon: 'fa-film', color: '#78716c', desc: 'Real stories from the real world' },
+    'fantasy': { icon: 'fa-hat-wizard', color: '#a855f7', desc: 'Magical realms and epic quests' },
+    'mystery': { icon: 'fa-search', color: '#14b8a6', desc: 'Puzzles and secrets waiting to be uncovered' },
+    'adventure': { icon: 'fa-compass', color: '#f97316', desc: 'Epic journeys and daring exploits' },
+    'crime': { icon: 'fa-user-secret', color: '#64748b', desc: 'The dark world of crime and justice' },
+    'war': { icon: 'fa-shield-alt', color: '#b91c1c', desc: 'Stories of conflict, courage, and sacrifice' },
+    'family': { icon: 'fa-home', color: '#22c55e', desc: 'Fun for the whole family' },
+    'music': { icon: 'fa-music', color: '#e879f9', desc: 'Feel the rhythm and soul of music' },
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const data = await API.catalog.genre(genreSlug);
+        const movies = data.movies || [];
+        const meta = genreMeta[genreSlug] || { icon: 'fa-film', color: 'var(--theme-primary)', desc: '' };
+
+        // Calculate genre stats
+        const avgRating = movies.length ? (movies.reduce((s, m) => s + (m.rating || 0), 0) / movies.length).toFixed(1) : '—';
+        const totalViews = movies.reduce((s, m) => s + (m.view_count || 0), 0);
+        const newest = movies.length ? Math.max(...movies.map(m => m.release_year || 0)) : '—';
+
+        document.title = `${data.genre.name} Movies — Flick`;
+
+        document.getElementById('genrePage').innerHTML = `
+            <!-- Genre Hero -->
+            <div style="background:linear-gradient(135deg, ${meta.color}15, transparent);border:1px solid ${meta.color}30;border-radius:var(--radius-xl);padding:var(--space-2xl) var(--space-xl);margin-bottom:var(--space-2xl);position:relative;overflow:hidden;">
+                <div style="position:absolute;top:-20px;right:-20px;font-size:8rem;opacity:0.05;"><i class="fas ${meta.icon}"></i></div>
+                <div style="display:flex;align-items:center;gap:var(--space-lg);margin-bottom:var(--space-lg);">
+                    <div style="width:56px;height:56px;border-radius:var(--radius-lg);background:${meta.color}20;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:${meta.color};">
+                        <i class="fas ${meta.icon}"></i>
+                    </div>
+                    <div>
+                        <h1 style="font-size:var(--font-size-3xl);font-weight:900;">${escapeHtml(data.genre.name)}</h1>
+                        <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:2px;">${meta.desc}</p>
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div style="display:flex;gap:var(--space-xl);flex-wrap:wrap;">
+                    <div style="text-align:center;">
+                        <div style="font-size:var(--font-size-2xl);font-weight:800;color:${meta.color};">${movies.length}</div>
+                        <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">Movies</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:var(--font-size-2xl);font-weight:800;color:#f59e0b;">⭐ ${avgRating}</div>
+                        <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">Avg Rating</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:var(--font-size-2xl);font-weight:800;">${totalViews.toLocaleString()}</div>
+                        <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">Total Views</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:var(--font-size-2xl);font-weight:800;">${newest}</div>
+                        <div style="font-size:var(--font-size-xs);color:var(--theme-text-muted);">Latest Year</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sort Options -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:var(--space-md);">
+                <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);">${movies.length} movie${movies.length !== 1 ? 's' : ''}</p>
+                <div style="display:flex;gap:var(--space-sm);">
+                    <button class="btn btn-sm btn-primary" onclick="sortGenre('default')">Default</button>
+                    <button class="btn btn-sm btn-ghost" onclick="sortGenre('rating')">⭐ Rating</button>
+                    <button class="btn btn-sm btn-ghost" onclick="sortGenre('year')">📅 Year</button>
+                    <button class="btn btn-sm btn-ghost" onclick="sortGenre('views')">👁 Views</button>
+                    <button class="btn btn-sm btn-ghost" onclick="sortGenre('az')">A-Z</button>
+                </div>
+            </div>
+
+            <!-- Movie Grid -->
+            <div class="movie-grid stagger-children" id="genreMovieGrid">
+                ${movies.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('')}
+            </div>
+
+            ${movies.length === 0 ? `
+            <div style="text-align:center;padding:80px 20px;">
+                <i class="fas ${meta.icon}" style="font-size:3rem;display:block;margin-bottom:var(--space-lg);opacity:0.15;color:${meta.color};"></i>
+                <h3 style="color:var(--theme-text-secondary);">No movies in this genre yet</h3>
+                <p style="color:var(--theme-text-muted);font-size:var(--font-size-sm);margin-top:var(--space-sm);">Check back soon!</p>
+                <a href="/browse/" class="btn btn-primary" style="margin-top:var(--space-xl);">Browse All Movies</a>
+            </div>
+            ` : ''}
+        `;
+
+        if (movies.length) initCardTilt();
+
+        // Store movies for sorting
+        window._genreMovies = movies;
+
+    } catch {
+        document.getElementById('genrePage').innerHTML = `
+            <div style="text-align:center;padding:80px;">
+                <i class="fas fa-exclamation-circle" style="font-size:2rem;display:block;margin-bottom:var(--space-lg);opacity:0.3;"></i>
+                <h2>Genre not found</h2>
+                <a href="/browse/" class="btn btn-primary" style="margin-top:var(--space-xl);">Browse Movies</a>
+            </div>`;
+    }
+});
+
+function sortGenre(sortBy) {
+    let movies = [...(window._genreMovies || [])];
+    switch(sortBy) {
+        case 'rating': movies.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
+        case 'year': movies.sort((a, b) => (b.release_year || 0) - (a.release_year || 0)); break;
+        case 'views': movies.sort((a, b) => (b.view_count || 0) - (a.view_count || 0)); break;
+        case 'az': movies.sort((a, b) => (a.title || '').localeCompare(b.title || '')); break;
+    }
+    const grid = document.getElementById('genreMovieGrid');
+    if (grid) {
+        grid.innerHTML = movies.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('');
+        initCardTilt();
+    }
+
+    // Update sort button styles
+    document.querySelectorAll('.btn-sm').forEach(btn => {
+        if (btn.onclick) {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-ghost');
+        }
+    });
+    event.target.classList.remove('btn-ghost');
+    event.target.classList.add('btn-primary');
+}
+</script>
+{% endblock %}

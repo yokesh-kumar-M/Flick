@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Flick - Premium Streaming Platform">
+    <title>{% block title %}Flick{% endblock %} | Flick</title>
+
+    <!-- Fonts: Using Apple San Francisco System Font -->
+    <!-- System font stack automatically uses San Francisco on macOS/iOS, Segoe UI on Windows, Roboto on Android -->
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{% static 'css/variables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <style>
+        /* View Transition API */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation-duration: 0.4s;
+        }
+
+        ::view-transition-old(root) {
+            animation: fade-out 0.4s ease;
+        }
+
+        ::view-transition-new(root) {
+            animation: fade-in 0.4s ease;
+        }
+
+        @keyframes fade-out {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.04;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Smooth transition for variables */
+        html {
+            transition: --theme-primary 0.6s ease,
+                --theme-accent 0.6s ease,
+                --theme-bg 0.6s ease,
+                --theme-surface 0.6s ease,
+                background-color 0.6s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="noise-overlay"></div>
+    <!-- Ambient Particle Canvas -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Navigation — Translucent Glass Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon"><img src="{% static 'img/Logo/logo.svg' %}"
+                        style="width:32px; border-radius:8px; box-shadow:0 0 10px rgba(99,102,241,0.5);"></span>
+                <span class="logo-text">Flick</span>
+            </a>
+
+            <div class="nav-links" id="navLinks">
+                <a href="/" class="nav-link" data-page="home">
+                    <i class="fas fa-home" style="margin-right:4px;font-size:0.8em;"></i> Home
+                </a>
+                <a href="/browse/" class="nav-link" data-page="browse">
+                    <i class="fas fa-compass" style="margin-right:4px;font-size:0.8em;"></i> Browse
+                </a>
+                <a href="/search/" class="nav-link" data-page="search">
+                    <i class="fas fa-search" style="margin-right:4px;font-size:0.8em;"></i> Search
+                </a>
+            </div>
+
+            <div class="nav-actions">
+                <!-- Notifications -->
+                <div class="nav-notification" id="notificationBell" style="display:none;">
+                    <button class="icon-btn" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notifBadge" style="display:none;">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notifDropdown" style="display:none;">
+                        <div class="notif-header">
+                            <h4>Notifications</h4>
+                            <button onclick="markAllRead()" class="text-btn">Mark all read</button>
+                        </div>
+                        <div class="notif-list" id="notifList"></div>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="nav-user" id="userMenu" style="display:none;">
+                    <button class="user-avatar-btn" onclick="toggleUserMenu()">
+                        <div class="avatar-ring" id="avatarRing">
+                            <span class="avatar-initials" id="avatarInitials">U</span>
+                        </div>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown" style="display:none;">
+                        <div class="dropdown-user-info">
+                            <span class="dropdown-username" id="dropdownUsername"></span>
+                        </div>
+                        <a href="/profile/" class="dropdown-item"><i class="fas fa-user"></i> Profile</a>
+                        <a href="/admin-panel/" class="dropdown-item" id="adminLink" style="display:none;">
+                            <i class="fas fa-shield-alt"></i> Admin CMS
+                        </a>
+                        <button class="dropdown-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Sign Out
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Auth Buttons (when not logged in) -->
+                <div class="nav-auth" id="authButtons">
+                    <a href="/login/" class="btn btn-ghost">Sign In</a>
+                    <a href="/register/" class="btn btn-primary">Sign Up</a>
+                </div>
+            </div>
+
+            <button class="nav-mobile-toggle" onclick="toggleMobileNav()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <span class="logo-icon"><img src="{% static 'img/Logo/logo.svg' %}"
+                        style="width:28px; border-radius:8px;"></span>
+                <span class="logo-text"
+                    style="background:var(--gradient-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;font-size:var(--font-size-xl);">Flick</span>
+                <p class="footer-tagline">Cinema in Space</p>
+            </div>
+            <div class="footer-links">
+                <a href="/browse/">Browse</a>
+                <a href="/search/">Search</a>
+                <a href="/profile/">Profile</a>
+            </div>
+            <div class="footer-copy">
+                <p>&copy; 2026 Flick. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ColorThief -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+
+    <!-- Core JS -->
+    <script src="{% static 'js/api.js' %}"></script>
+    <script src="{% static 'js/auth.js' %}"></script>
+    <script src="{% static 'js/theme-engine.js' %}"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            initNavbar();
+            initParticles();
+        });
+    </script>
+</body>
+
+</html>

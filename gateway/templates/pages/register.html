@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card fade-in-scale">
+        <div class="auth-card-header">
+            <img src="/static/img/Logo/epic.svg" style="width:48px; border-radius:12px; margin-bottom:var(--space-md); box-shadow: 0 0 15px rgba(6,182,212,0.5);">
+            <h1>Join Flick</h1>
+            <p>Create your free account</p>
+        </div>
+
+        <form id="registerForm" onsubmit="handleRegister(event)" style="position:relative;">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-input" id="regUsername" placeholder="Choose a username" required minlength="3">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="regEmail" placeholder="your@email.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Display Name</label>
+                <input type="text" class="form-input" id="regDisplayName" placeholder="How should we call you?">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="regPassword" placeholder="Min 8 chars, 1 uppercase, 1 digit" required minlength="8">
+            </div>
+
+            <div id="registerError" class="form-error" style="display:none;margin-bottom:var(--space-md);"></div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;" id="regBtn">
+                Create Account
+            </button>
+
+            <p style="text-align:center;margin-top:var(--space-lg);color:var(--theme-text-secondary);font-size:var(--font-size-sm);">
+                Already have an account? <a href="/login/" style="font-weight:600;">Sign in</a>
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('regBtn');
+    const errorEl = document.getElementById('registerError');
+    errorEl.style.display = 'none';
+    btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+    btn.disabled = true;
+
+    try {
+        const data = await API.auth.register({
+            username: document.getElementById('regUsername').value,
+            email: document.getElementById('regEmail').value,
+            display_name: document.getElementById('regDisplayName').value || undefined,
+            password: document.getElementById('regPassword').value,
+        });
+        showToast('Account created! Welcome to Flick <img src="/static/img/Logo/logo.svg" style="width:20px; vertical-align:middle; display:inline-block;">', 'success');
+        setTimeout(() => window.location.href = '/', 500);
+    } catch (err) {
+        const errors = [];
+        if (err.username) errors.push(...(Array.isArray(err.username) ? err.username : [err.username]));
+        if (err.email) errors.push(...(Array.isArray(err.email) ? err.email : [err.email]));
+        if (err.password) errors.push(...(Array.isArray(err.password) ? err.password : [err.password]));
+        errorEl.textContent = errors.join(' ') || err.error || 'Registration failed';
+        errorEl.style.display = 'block';
+        btn.textContent = 'Create Account';
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

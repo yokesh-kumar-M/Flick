@@ -1,0 +1,187 @@
+version: '3.9'
+
+services:
+  # ── Infrastructure ──
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Gateway Service (:8000) ──
+  gateway:
+    build: ./gateway
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./gateway:/app
+      - media_data:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Auth Service (:8001) ──
+  auth_service:
+    build: ./auth_service
+    ports:
+      - "8001:8001"
+    env_file: .env
+    volumes:
+      - ./auth_service:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Catalog Service (:8002) ──
+  catalog_service:
+    build: ./catalog_service
+    ports:
+      - "8002:8002"
+    env_file: .env
+    volumes:
+      - ./catalog_service:/app
+      - media_data:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8002/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Access Service (:8003) ──
+  access_service:
+    build: ./access_service
+    ports:
+      - "8003:8003"
+    env_file: .env
+    volumes:
+      - ./access_service:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8003/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Streaming Service (:8004) ──
+  streaming_service:
+    build: ./streaming_service
+    ports:
+      - "8004:8004"
+    env_file: .env
+    volumes:
+      - ./streaming_service:/app
+      - media_data:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8004/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Recommendation Service (:8005) ──
+  recommendation_service:
+    build: ./recommendation_service
+    ports:
+      - "8005:8005"
+    env_file: .env
+    volumes:
+      - ./recommendation_service:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8005/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Notification Service (:8006) ──
+  notification_service:
+    build: ./notification_service
+    ports:
+      - "8006:8006"
+    env_file: .env
+    volumes:
+      - ./notification_service:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8006/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Celery Workers ──
+  celery_recommendation:
+    build: ./recommendation_service
+    command: celery -A recommendation_project worker -l info -B
+    env_file: .env
+    volumes:
+      - ./recommendation_service:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+      recommendation_service:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery_streaming:
+    build: ./streaming_service
+    command: celery -A streaming_project worker -l info
+    env_file: .env
+    volumes:
+      - ./streaming_service:/app
+      - media_data:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+      streaming_service:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  media_data:
