@@ -17,6 +17,7 @@ ALLOWED_HOSTS.append('.vercel.app')
 env_render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if env_render_host:
     ALLOWED_HOSTS.append(env_render_host)
+ALLOWED_HOSTS.append('*')
 
 CACHES = {
     'default': {

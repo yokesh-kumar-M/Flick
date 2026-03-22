@@ -31,18 +31,12 @@ def check_service(url):
 def health_check(request):
     REQUEST_COUNTER['count'] += 1
     
-    dependencies = {
-        'redis': check_redis(),
-        'auth': check_service(settings.AUTH_SERVICE_URL),
-        'catalog': check_service(settings.CATALOG_SERVICE_URL),
-    }
-    
     return JsonResponse({
         'status': 'ok',
         'service': 'gateway',
         'version': '2.0.0',
         'timestamp': datetime.utcnow().isoformat(),
-        'dependencies': dependencies,
+        'dependencies': 'skipped_to_prevent_timeout',
     })
 
 
