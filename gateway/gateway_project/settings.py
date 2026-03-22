@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_spectacular',
     'corsheaders',
     'frontend',
 ]
@@ -98,6 +99,34 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+    SECURE_CONTENT_SECURITY_POLICY = {
+        "default-src": "'self'",
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com",
+        "style-src": "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+        "font-src": "'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+        "img-src": "'self' data: blob: https:",
+        "media-src": "'self' blob:",
+        "connect-src": "'self'",
+        "frame-ancestors": "'none'",
+    }
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+        ],
+        traces_sample_rate=0.1 if not DEBUG else 1.0,
+        environment='production' if not DEBUG else 'development',
+        send_default_pii=False,
+    )
+
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptPasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
@@ -143,10 +172,23 @@ NOTIFICATION_SERVICE_URL = _ensure_http(os.environ.get('NOTIFICATION_SERVICE_URL
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {'verbose': {'format': '{levelname} {asctime} {module} {message}', 'style': '{'}},
-    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose'}},
+    'formatters': {
+        'verbose': {'format': '{levelname} {asctime} {module} {message}', 'style': '{'},
+        'json': {'format': '{"time": "%(asctime)s", "level": "%(levelname)s", "module": "%(module)s", "message": "%(message)s"}'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose'},
+        'json_console': {'class': 'logging.StreamHandler', 'formatter': 'json'},
+    },
     'root': {'handlers': ['console'], 'level': 'INFO'},
+    'loggers': {
+        'django': {'handlers': ['console'], 'level': 'INFO'},
+        'django.security': {'handlers': ['console'], 'level': 'WARNING'},
+    },
 }
+
+RATE_LIMIT_CACHE = 'default'
+USER_RATE_LIMIT = os.environ.get('USER_RATE_LIMIT', '100/hour')
 
 import sys
 sys.path.insert(0, str(BASE_DIR.parent / 'shared'))
