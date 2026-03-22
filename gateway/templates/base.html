@@ -6,10 +6,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Flick - Premium Streaming Platform">
-    <title>{% block title %}Flick{% endblock %} | Flick</title>
+    <title>{% block title %}Home{% endblock %} | Flick</title>
 
-    <!-- Fonts: Using Apple San Francisco System Font -->
-    <!-- System font stack automatically uses San Francisco on macOS/iOS, Segoe UI on Windows, Roboto on Android -->
+    <!-- Google Fonts Inter -->
+    <link href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap' rel='stylesheet'>
 
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -37,23 +37,13 @@
         }
 
         @keyframes fade-out {
-            from {
-                opacity: 1;
-            }
-
-            to {
-                opacity: 0;
-            }
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
 
         @keyframes fade-in {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .noise-overlay {
@@ -64,11 +54,10 @@
             height: 100vh;
             pointer-events: none;
             z-index: 9999;
-            opacity: 0.04;
+            opacity: 0.03;
             background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
-        /* Smooth transition for variables */
         html {
             transition: --theme-primary 0.6s ease,
                 --theme-accent 0.6s ease,
@@ -76,21 +65,434 @@
                 --theme-surface 0.6s ease,
                 background-color 0.6s ease;
         }
+
+        /* ═══════════════════════════════════════════
+           CINEMATIC LOADING SCREEN
+           ═══════════════════════════════════════════ */
+        .cinematic-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .cinematic-loader.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .cinematic-loader-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.5), 0 0 60px rgba(229, 9, 20, 0.3);
+            margin-bottom: var(--space-2xl);
+        }
+
+        .cinematic-loader-ring {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: #F5A623;
+            border-right-color: #E50914;
+            border-bottom-color: #7C3AED;
+            animation: spin 1s linear infinite;
+        }
+
+        /* ═══════════════════════════════════════════
+           PROGRESS BAR
+           ═══════════════════════════════════════════ */
+        .scroll-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: var(--gradient-cinema);
+            z-index: 10001;
+            transition: width 0.1s ease-out;
+        }
+
+        /* ═══════════════════════════════════════════
+           SCROLL TO TOP BUTTON
+           ═══════════════════════════════════════════ */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--glass-bg-medium);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border-bright);
+            color: var(--theme-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 9998;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .scroll-to-top:hover {
+            background: var(--color-cinema-violet);
+            box-shadow: var(--glow-violet);
+        }
+
+        /* ═══════════════════════════════════════════
+           CURSOR GLOW EFFECT
+           ═══════════════════════════════════════════ */
+        .cursor-glow {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            background: radial-gradient(
+                circle,
+                rgba(124, 58, 237, 0.08) 0%,
+                rgba(229, 9, 20, 0.04) 30%,
+                transparent 70%
+            );
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+            mix-blend-mode: screen;
+        }
+
+        @media (max-width: 768px) {
+            .cursor-glow { display: none; }
+        }
+
+        /* ═══════════════════════════════════════════
+           PREMIUM NAVBAR
+           ═══════════════════════════════════════════ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            z-index: var(--z-navbar);
+            background: transparent;
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+            border-bottom: 1px solid transparent;
+            transition: all 0.4s ease;
+        }
+
+        .navbar.scrolled {
+            background: rgba(9, 9, 11, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .navbar.scrolled::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--color-cinema-violet), transparent);
+            opacity: 0.5;
+        }
+
+        .nav-container {
+            max-width: var(--container-max);
+            margin: 0 auto;
+            padding: 0 var(--space-xl);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-xl);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: var(--font-size-xl);
+            font-weight: 800;
+            color: var(--theme-text) !important;
+            position: relative;
+            font-family: var(--font-family-display);
+        }
+
+        .logo-icon {
+            font-size: 1.6rem;
+            filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.5));
+            animation: logoPulse 4s ease-in-out infinite;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex: 1;
+            justify-content: center;
+        }
+
+        .nav-link {
+            color: var(--theme-text-secondary) !important;
+            font-weight: var(--font-weight-medium);
+            font-size: var(--font-size-sm);
+            letter-spacing: var(--letter-spacing-normal);
+            padding: var(--space-sm) var(--space-lg);
+            border-radius: var(--radius-full);
+            transition: var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: rgba(124, 58, 237, 0);
+            transition: var(--transition-fast);
+        }
+
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            background: rgba(124, 58, 237, 0.15);
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--theme-text) !important;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: var(--color-cinema-violet);
+            border-radius: var(--radius-full);
+            box-shadow: 0 0 8px var(--color-cinema-violet);
+        }
+
+        /* ═══════════════════════════════════════════
+           PREMIUM FOOTER
+           ═══════════════════════════════════════════ */
+        .footer {
+            background: rgba(9, 9, 11, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            padding: var(--space-3xl) 0;
+            margin-top: var(--space-4xl);
+            position: relative;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20%;
+            right: 20%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--color-cinema-violet), transparent);
+            opacity: 0.4;
+        }
+
+        .footer-container {
+            max-width: var(--container-max);
+            margin: 0 auto;
+            padding: 0 var(--space-xl);
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: var(--space-2xl);
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .footer-brand-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: var(--font-size-xl);
+            font-weight: 800;
+            font-family: var(--font-family-display);
+        }
+
+        .footer-brand-logo .logo-text {
+            background: linear-gradient(135deg, #F5A623, #E50914);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .footer-tagline {
+            color: var(--theme-text-muted);
+            font-size: var(--font-size-sm);
+            max-width: 280px;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-sm);
+        }
+
+        .footer-social a {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--glass-bg-light);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--theme-text-secondary);
+            transition: var(--transition-fast);
+        }
+
+        .footer-social a:hover {
+            background: var(--color-cinema-violet);
+            border-color: var(--color-cinema-violet);
+            color: white;
+            box-shadow: var(--glow-violet);
+        }
+
+        .footer-column h4 {
+            font-size: var(--font-size-sm);
+            font-weight: 700;
+            color: var(--theme-text);
+            margin-bottom: var(--space-lg);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .footer-column a {
+            color: var(--theme-text-secondary);
+            font-size: var(--font-size-sm);
+            transition: var(--transition-fast);
+        }
+
+        .footer-column a:hover {
+            color: var(--color-cinema-gold);
+        }
+
+        .footer-bottom {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--space-xl);
+            border-top: 1px solid var(--glass-border);
+            margin-top: var(--space-xl);
+        }
+
+        .footer-copyright {
+            color: var(--theme-text-muted);
+            font-size: var(--font-size-xs);
+        }
+
+        .footer-legal {
+            display: flex;
+            gap: var(--space-lg);
+        }
+
+        .footer-legal a {
+            color: var(--theme-text-muted);
+            font-size: var(--font-size-xs);
+        }
+
+        .footer-legal a:hover {
+            color: var(--theme-text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .footer-brand {
+                grid-column: 1 / -1;
+            }
+            .footer-bottom {
+                flex-direction: column;
+                gap: var(--space-md);
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <!-- Cinematic Loading Screen -->
+    <div class="cinematic-loader" id="cinematicLoader">
+        <img src="{% static 'img/Logo/logo.svg' %}" class="cinematic-loader-logo" alt="Flick">
+        <div class="cinematic-loader-ring"></div>
+    </div>
+
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+
+    <!-- Cursor Glow (Desktop only) -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+
+    <!-- Noise Overlay -->
     <div class="noise-overlay"></div>
+
     <!-- Ambient Particle Canvas -->
     <canvas id="particleCanvas"></canvas>
 
-    <!-- Navigation — Translucent Glass Bar -->
+    <!-- Navigation -->
     {% block navbar %}
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <span class="logo-icon"><img src="{% static 'img/Logo/logo.svg' %}"
-                        style="width:32px; border-radius:8px; box-shadow:0 0 10px rgba(99,102,241,0.5);"></span>
+                <span class="logo-icon"><img src="{% static 'img/Logo/logo.svg' %}" style="width:32px; border-radius:8px; box-shadow:0 0 15px rgba(124,58,237,0.5);"></span>
                 <span class="logo-text">Flick</span>
             </a>
 
@@ -167,23 +569,64 @@
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <span class="logo-icon"><img src="{% static 'img/Logo/logo.svg' %}"
-                        style="width:28px; border-radius:8px;"></span>
-                <span class="logo-text"
-                    style="background:var(--gradient-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;font-size:var(--font-size-xl);">Flick</span>
-                <p class="footer-tagline">Cinema in Space</p>
+                <div class="footer-brand-logo">
+                    <span class="logo-icon"><img src="{% static 'img/Logo/logo.svg' %}" style="width:28px; border-radius:8px;"></span>
+                    <span class="logo-text">Flick</span>
+                </div>
+                <p class="footer-tagline">Experience cinema redefined. Premium streaming with zero ads, 4K quality, and exclusive content.</p>
+                <div class="footer-social">
+                    <a href="#" title="X/Twitter"><i class="fab fa-x-twitter"></i></a>
+                    <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+                </div>
             </div>
-            <div class="footer-links" id="footerLinks">
-                <a href="/browse/">Browse</a>
-                <a href="/search/">Search</a>
-                <a href="/profile/">Profile</a>
+
+            <div class="footer-column">
+                <h4>Platform</h4>
+                <ul>
+                    <li><a href="/browse/">Browse</a></li>
+                    <li><a href="/search/">Search</a></li>
+                    <li><a href="/profile/">My Profile</a></li>
+                    <li><a href="#">Devices</a></li>
+                </ul>
             </div>
-            <div class="footer-copy">
-                <p>&copy; 2026 Flick. All rights reserved.</p>
+
+            <div class="footer-column">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Press</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                    <li><a href="#">DMCA</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright" id="footerCopyright">&copy; 2026 Flick. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy</a>
+                    <a href="#">Terms</a>
+                    <a href="#">Cookies</a>
+                </div>
             </div>
         </div>
     </footer>
     {% endblock %}
+
+    <!-- Scroll to Top Button -->
+    <button class="scroll-to-top" id="scrollToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
@@ -196,11 +639,132 @@
     <script src="{% static 'js/auth.js' %}"></script>
     <script src="{% static 'js/theme-engine.js' %}"></script>
     <script src="{% static 'js/ui.js' %}"></script>
+    <script src="{% static 'js/interactions.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
+    <!-- Service Worker Registration -->
     <script>
-        // Initialize on page load
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/js/sw.js')
+                .then(reg => console.log('SW registered:', reg.scope))
+                .catch(err => console.log('SW registration failed:', err));
+        }
+    </script>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('footerCopyright').textContent = `© ${new Date().getFullYear()} Flick. All rights reserved.`;
+
+        // ═══════════════════════════════════════════
+        // CINEMATIC LOADING SCREEN
+        // ═══════════════════════════════════════════
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('cinematicLoader');
+                if (loader) {
+                    loader.classList.add('fade-out');
+                    setTimeout(() => loader.remove(), 500);
+                }
+            }, 800);
+        });
+
+        // ═══════════════════════════════════════════
+        // SCROLL PROGRESS BAR
+        // ═══════════════════════════════════════════
+        function initScrollProgress() {
+            const progressBar = document.getElementById('scrollProgressBar');
+            if (!progressBar) return;
+
+            window.addEventListener('scroll', () => {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                progressBar.style.width = scrolled + '%';
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // SCROLL TO TOP BUTTON
+        // ═══════════════════════════════════════════
+        function initScrollToTop() {
+            const btn = document.getElementById('scrollToTop');
+            if (!btn) return;
+
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 400) {
+                    btn.classList.add('visible');
+                } else {
+                    btn.classList.remove('visible');
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // CURSOR GLOW EFFECT (Desktop only)
+        // ═══════════════════════════════════════════
+        function initCursorGlow() {
+            const cursor = document.getElementById('cursorGlow');
+            if (!cursor) return;
+            if (window.innerWidth <= 768) return;
+
+            let ticking = false;
+
+            document.addEventListener('mousemove', (e) => {
+                if (ticking) return;
+                ticking = true;
+
+                requestAnimationFrame(() => {
+                    cursor.style.left = e.clientX + 'px';
+                    cursor.style.top = e.clientY + 'px';
+                    ticking = false;
+                });
+            });
+
+            // Hide when leaving window
+            document.addEventListener('mouseleave', () => {
+                cursor.style.opacity = '0';
+            });
+
+            document.addEventListener('mouseenter', () => {
+                cursor.style.opacity = '1';
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // AUTO-HIDE NAVBAR ON SCROLL
+        // ═══════════════════════════════════════════
+        function initAutoHideNavbar() {
+            const navbar = document.getElementById('navbar');
+            if (!navbar) return;
+
+            let lastScrollY = window.scrollY;
+            let ticking = false;
+
+            window.addEventListener('scroll', () => {
+                if (ticking) return;
+                ticking = true;
+
+                requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY;
+
+                    if (currentScrollY > 30) {
+                        navbar.classList.add('scrolled');
+                    } else {
+                        navbar.classList.remove('scrolled');
+                    }
+
+                    lastScrollY = currentScrollY;
+                    ticking = false;
+                });
+            });
+        }
+
+        // Initialize everything
         document.addEventListener('DOMContentLoaded', () => {
+            initScrollProgress();
+            initScrollToTop();
+            initCursorGlow();
+            initAutoHideNavbar();
             initAuth();
             initNavbar();
             initParticles();
@@ -210,7 +774,7 @@
                 const services = ['auth', 'catalog', 'access', 'streaming', 'recommendations', 'notifications'];
                 services.forEach(service => {
                     fetch(`/proxy/${service}/health/`, { method: 'GET', keepalive: true })
-                        .catch(() => { }); // silent fail so it doesn't spam console if a service is actively starting
+                        .catch(() => { });
                 });
             }, 300000);
         });

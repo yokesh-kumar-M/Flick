@@ -7,50 +7,207 @@
 {% block footer %}{% endblock %}
 
 {% block content %}
-<div class="auth-page">
-    <div class="auth-card fade-in-scale">
-        <div class="auth-card-header">
-            <img src="/static/img/Logo/logo.svg"
-                style="width:48px; border-radius:12px; margin-bottom:var(--space-md); box-shadow: 0 0 15px rgba(255,255,255,0.2);">
-            <h1>Welcome Back</h1>
-            <p>Sign in to continue streaming</p>
-        </div>
-
-        <form id="loginForm" onsubmit="handleLogin(event)" style="position:relative;">
-            <div class="form-group">
-                <label class="form-label">Username</label>
-                <input type="text" class="form-input" id="loginUsername" placeholder="Enter username" required
-                    autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required
-                    autocomplete="current-password">
-            </div>
-
-            <div id="loginError" class="form-error" style="display:none;margin-bottom:var(--space-md);"></div>
-
-            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;" id="loginBtn">
-                Sign In
-            </button>
-
-            <p
-                style="text-align:center;margin-top:var(--space-lg);color:var(--theme-text-secondary);font-size:var(--font-size-sm);">
-                Don't have an account? <a href="/register/" style="font-weight:600;">Create one</a>
+<div class="auth-page" style="min-height: 100vh; display: flex; align-items: stretch;">
+    <!-- Left Panel - Cinematic Background -->
+    <div class="auth-split-left" style="flex: 1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--theme-surface);">
+        <!-- Animated gradient background -->
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(229,9,20,0.1) 50%, rgba(245,166,35,0.08) 100%); animation: auroraShift 20s ease infinite;"></div>
+        
+        <!-- Particle effect -->
+        <canvas id="authParticles" style="position: absolute; inset: 0; pointer-events: none;"></canvas>
+        
+        <!-- Branding content -->
+        <div style="position: relative; z-index: 2; text-align: center; padding: var(--space-2xl);">
+            <img src="{% static 'img/Logo/logo.svg' %}" style="width:100px; border-radius:20px; margin-bottom: var(--space-xl); box-shadow: 0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(229,9,20,0.3);">
+            <h1 style="font-family: var(--font-family-display); font-size: var(--font-size-4xl); font-weight: 900; margin-bottom: var(--space-md); background: linear-gradient(135deg, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Welcome to Flick
+            </h1>
+            <p style="font-size: var(--font-size-xl); color: var(--theme-text-secondary); max-width: 400px;">
+                Experience cinema redefined. Stream unlimited movies in stunning 4K quality.
             </p>
-        </form>
+            
+            <!-- Feature highlights -->
+            <div style="display: flex; gap: var(--space-xl); margin-top: var(--space-2xl); justify-content: center;">
+                <div style="text-align: center;">
+                    <i class="fas fa-film" style="font-size: 2rem; color: var(--color-cinema-gold); margin-bottom: var(--space-sm);"></i>
+                    <p style="font-size: var(--font-size-sm); color: var(--theme-text-muted);">10,000+ Movies</p>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-ban" style="font-size: 2rem; color: var(--color-cinema-teal); margin-bottom: var(--space-sm);"></i>
+                    <p style="font-size: var(--font-size-sm); color: var(--theme-text-muted);">Zero Ads</p>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-tv" style="font-size: 2rem; color: var(--color-cinema-violet); margin-bottom: var(--space-sm);"></i>
+                    <p style="font-size: var(--font-size-sm); color: var(--theme-text-muted);">4K Quality</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Panel - Login Form -->
+    <div class="auth-split-right" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-2xl); background: var(--theme-bg);">
+        <div class="auth-card fade-in-scale" style="width: 100%; max-width: 440px; background: rgba(9, 9, 11, 0.8); backdrop-filter: blur(32px); border: 1px solid var(--glass-border-bright); border-radius: var(--radius-2xl); padding: var(--space-2xl);">
+            <div class="auth-card-header">
+                <h1 style="font-family: var(--font-family-display); font-size: var(--font-size-2xl); font-weight: 800; margin-bottom: var(--space-xs);">Welcome Back</h1>
+                <p style="color: var(--theme-text-secondary);">Sign in to continue streaming</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" style="position:relative;">
+                <div class="floating-label-group">
+                    <input type="text" class="premium-input" id="loginUsername" placeholder=" " autocomplete="username" required>
+                    <label>Username</label>
+                </div>
+                <div class="floating-label-group">
+                    <input type="password" class="premium-input" id="loginPassword" placeholder=" " autocomplete="current-password" required>
+                    <label>Password</label>
+                </div>
+
+                <div id="loginError" class="form-error" style="display:none;margin-bottom:var(--space-md);"></div>
+
+                <button type="submit" class="btn-cinema" style="width: 100%;" id="loginBtn">
+                    <span>Sign In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <p style="text-align:center;margin-top:var(--space-lg);color:var(--theme-text-secondary);font-size:var(--font-size-sm);">
+                    New to Flick? <a href="/register/" style="color: var(--color-cinema-gold); font-weight: 600;">Start your journey</a>
+                </p>
+            </form>
+        </div>
     </div>
 </div>
+
+<style>
+    .auth-split-left { display: none; }
+    .auth-split-right { flex: 1; }
+    
+    @media (min-width: 1024px) {
+        .auth-split-left { display: flex; }
+        .auth-split-right { flex: 0 0 500px; }
+    }
+    
+    .premium-input {
+        width: 100%;
+        padding: var(--space-lg) var(--space-md) var(--space-sm);
+        background: rgba(24, 24, 27, 0.8);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        color: var(--theme-text);
+        font-size: var(--font-size-base);
+        transition: all 0.3s ease;
+    }
+    
+    .premium-input:focus {
+        outline: none;
+        border-color: var(--color-cinema-violet);
+        box-shadow: var(--glow-violet);
+    }
+    
+    .floating-label-group {
+        position: relative;
+        margin-bottom: var(--space-lg);
+    }
+    
+    .floating-label-group label {
+        position: absolute;
+        left: var(--space-md);
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--theme-text-muted);
+        font-size: var(--font-size-base);
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    .floating-label-group input:focus + label,
+    .floating-label-group input:not(:placeholder-shown) + label {
+        top: 8px;
+        font-size: var(--font-size-xs);
+        color: var(--color-cinema-violet);
+    }
+    
+    .btn-cinema {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-sm);
+        padding: var(--space-md) var(--space-xl);
+        background: var(--gradient-cinema);
+        border: none;
+        border-radius: var(--radius-lg);
+        font-size: var(--font-size-base);
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+    }
+    
+    .btn-cinema:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(124, 58, 237, 0.5);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Simple particle animation for auth page
+    function initAuthParticles() {
+        const canvas = document.getElementById('authParticles');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        
+        let particles = [];
+        
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(124, 58, 237, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+        
+        for (let i = 0; i < 50; i++) particles.push(new Particle());
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+    
+    document.addEventListener('DOMContentLoaded', initAuthParticles);
+    
     async function handleLogin(e) {
         e.preventDefault();
         const btn = document.getElementById('loginBtn');
         const errorEl = document.getElementById('loginError');
         errorEl.style.display = 'none';
-        btn.innerHTML = '<div class="loading-dots" style="padding:0;"><span></span><span></span><span></span></div>';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
         btn.disabled = true;
 
         try {
@@ -58,12 +215,12 @@
                 username: document.getElementById('loginUsername').value,
                 password: document.getElementById('loginPassword').value,
             });
-            showToast('Welcome back! <img src="/static/img/Logo/logo.svg" style="width:20px; vertical-align:middle; display:inline-block; border-radius:4px;">', 'success');
+            showToast('Welcome back!', 'success');
             setTimeout(() => window.location.href = '/', 500);
         } catch (err) {
             errorEl.textContent = err.error || 'Invalid credentials';
             errorEl.style.display = 'block';
-            btn.textContent = 'Sign In';
+            btn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
             btn.disabled = false;
         }
     }

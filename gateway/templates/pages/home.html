@@ -4,36 +4,158 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<!-- Cinematic Spotlight Hero -->
-<div id="heroSection" class="spotlight-container">
-    <div class="hero" style="background: var(--theme-surface);">
-        <div class="hero-content">
-            <div class="skeleton skeleton-text lg" style="width:300px;height:48px;"></div>
-            <div class="skeleton skeleton-text" style="width:450px;margin-top:16px;height:18px;"></div>
-            <div class="skeleton skeleton-text sm" style="width:200px;margin-top:12px;height:14px;"></div>
+<!-- Full Bleed Cinematic Hero Section -->
+<div id="heroSection" class="spotlight-container" style="position: relative; height: 100vh; min-height: 600px; overflow: hidden;">
+    <div class="hero" id="heroArea" style="position: absolute; inset: 0; background: var(--theme-surface);">
+        <div class="hero-backdrop skeleton" style="position: absolute; inset: 0;"></div>
+    </div>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to right, #000000 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 70%, transparent 100%); z-index: 1;"></div>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, #000 100%); z-index: 2;"></div>
+    <div class="hero-content" style="position: relative; z-index: 3; height: 100%; display: flex; flex-direction: column; justify-content: center; max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl);">
+        <div class="hero-info-panel fade-in" style="max-width: 700px;">
+            <h1 class="hero-title" style="font-family: var(--font-family-display); font-size: 72px; font-weight: 900; line-height: 1.05; margin-bottom: var(--space-md); background: linear-gradient(135deg, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Experience Cinema.<br>Redefined.
+            </h1>
+            <p class="hero-description" style="font-size: var(--font-size-xl); color: var(--theme-text-secondary); margin-bottom: var(--space-xl); line-height: 1.6;">
+                Stream unlimited movies in stunning 4K. Zero ads. Premium originals. Your next favorite is waiting.
+            </p>
+            <div class="hero-actions" style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
+                <button class="hero-cta-primary" onclick="navigateTo('/browse/')">
+                    <i class="fas fa-play"></i> Start Watching
+                </button>
+                <button class="hero-cta-secondary" onclick="navigateTo('/browse/')">
+                    <i class="fas fa-plus"></i> See What's New
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Animated Stat Counters -->
+<section class="section" style="background: linear-gradient(180deg, #000 0%, var(--theme-surface) 100%); padding: var(--space-3xl) 0;">
+    <div style="max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl);">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-xl); text-align: center;">
+            <div class="stat-counter-card">
+                <i class="fas fa-film stat-icon" style="color: var(--color-cinema-gold);"></i>
+                <span class="stat-number" data-count="10000" data-duration="2000" data-prefix="">+</span>
+                <span class="stat-label">Movies</span>
+            </div>
+            <div class="stat-counter-card">
+                <i class="fas fa-list stat-icon" style="color: var(--color-cinema-crimson);"></i>
+                <span class="stat-number" data-count="50" data-duration="2000" data-prefix="">+</span>
+                <span class="stat-label">Genres</span>
+            </div>
+            <div class="stat-counter-card">
+                <i class="fas fa-tv stat-icon" style="color: var(--color-cinema-teal);"></i>
+                <span class="stat-number" data-count="4" data-duration="1500" data-prefix="">K</span>
+                <span class="stat-label">Streaming</span>
+            </div>
+            <div class="stat-counter-card">
+                <i class="fas fa-ban stat-icon" style="color: var(--color-cinema-violet);"></i>
+                <span class="stat-number" data-count="0" data-duration="1000" data-prefix="">Zero</span>
+                <span class="stat-label">Ads</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Today - Spotlight Card -->
+<section class="section" id="featuredSection">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-crown" style="color: var(--color-cinema-gold);"></i> Featured Today</h2>
+    </div>
+    <div style="padding: 0 var(--space-xl); max-width: var(--container-max); margin: 0 auto;">
+        <div id="spotlightCard"></div>
+    </div>
+</section>
+
+<!-- Continue Watching (shown when logged in) -->
+<div id="continueWatchingSection" style="display: none;">
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-play-circle" style="color: var(--color-cinema-violet);"></i> Continue Watching</h2>
+        </div>
+        <div class="carousel-container">
+            <button class="carousel-btn left" onclick="scrollCarousel('continueCarousel', -1)"><i class="fas fa-chevron-left"></i></button>
+            <div class="carousel stagger-children" id="continueCarousel"></div>
+            <button class="carousel-btn right" onclick="scrollCarousel('continueCarousel', 1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </section>
+</div>
+
+<!-- Trending Now -->
+<section class="section" id="trendingSection">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-fire" style="color: var(--color-cinema-crimson);"></i> Trending Now</h2>
+        <a href="/browse/?sort=-trending_score" class="section-link">See All <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="carousel-container">
+        <button class="carousel-btn left" onclick="scrollCarousel('trendingCarousel', -1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel stagger-children" id="trendingCarousel"></div>
+        <button class="carousel-btn right" onclick="scrollCarousel('trendingCarousel', 1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</section>
+
+<!-- Why Flick? -->
+<section class="section" style="background: var(--theme-surface);">
+    <div style="max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl); text-align: center;">
+        <h2 class="section-title" style="justify-content: center; font-size: var(--font-size-3xl); margin-bottom: var(--space-2xl);">
+            <span style="background: var(--gradient-cinema); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Why Flick?</span>
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-xl);">
+            <div class="glass-card-premium" style="padding: var(--space-2xl); text-align: center; cursor: default;">
+                <i class="fas fa-desktop" style="font-size: 3rem; color: var(--color-cinema-teal); margin-bottom: var(--space-lg);"></i>
+                <h3 style="font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--space-sm);">Any Device</h3>
+                <p style="color: var(--theme-text-secondary); font-size: var(--font-size-sm);">Watch on your TV, laptop, tablet, or phone. Stream anywhere, anytime.</p>
+            </div>
+            <div class="glass-card-premium" style="padding: var(--space-2xl); text-align: center; cursor: default;">
+                <i class="fas fa-bolt" style="font-size: 3rem; color: var(--color-cinema-gold); margin-bottom: var(--space-lg);"></i>
+                <h3 style="font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--space-sm);">Instant Streaming</h3>
+                <p style="color: var(--theme-text-secondary); font-size: var(--font-size-sm);">No downloads, no waiting. Press play and start watching immediately.</p>
+            </div>
+            <div class="glass-card-premium" style="padding: var(--space-2xl); text-align: center; cursor: default;">
+                <i class="fas fa-star" style="font-size: 3rem; color: var(--color-cinema-violet); margin-bottom: var(--space-lg);"></i>
+                <h3 style="font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--space-sm);">Curated Quality</h3>
+                <p style="color: var(--theme-text-secondary); font-size: var(--font-size-sm);">Hand-picked selections by experts. Discover the best in cinema.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Genres Showcase -->
+<section class="section" style="padding: var(--space-3xl) 0;">
+    <div style="max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl);">
+        <h2 class="section-title" style="margin-bottom: var(--space-xl);">Browse by Genre</h2>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap; justify-content: center;">
+            <span class="mood-pill" data-mood="intense" onclick="navigateTo('/genre/action/')">🎬 Action</span>
+            <span class="mood-pill" data-mood="feelgood" onclick="navigateTo('/genre/comedy/')">😄 Comedy</span>
+            <span class="mood-pill" data-mood="dark" onclick="navigateTo('/genre/horror/')">👻 Horror</span>
+            <span class="mood-pill" data-mood="mindblowing" onclick="navigateTo('/genre/sci-fi/')">🚀 Sci-Fi</span>
+            <span class="mood-pill" data-mood="romantic" onclick="navigateTo('/genre/romance/')">💕 Romance</span>
+            <span class="mood-pill" data-mood="brainteaser" onclick="navigateTo('/genre/mystery/')">🔍 Mystery</span>
+            <span class="mood-pill" data-mood="chill" onclick="navigateTo('/genre/drama/')">🎭 Drama</span>
+            <span class="mood-pill" data-mood="mindblowing" onclick="navigateTo('/genre/fantasy/')">🧙 Fantasy</span>
+        </div>
+    </div>
+</section>
+
 <!-- Orbital Genre Ring Navigation -->
-<section class="orbital-section" id="orbitalSection" style="display:none;">
+<section class="orbital-section" id="orbitalSection" style="display: none;">
     <h2 class="orbital-section-title">Explore Genres</h2>
     <p class="orbital-section-subtitle">Click a genre orb to discover movies</p>
     <div class="orbital-ring-container" id="orbitalRingContainer">
         <div class="orbital-ring"></div>
         <div class="orbital-ring-inner"></div>
         <div class="orbital-center">
-            <span id="orbitalCenterText"><img src="/static/img/Logo/logo.svg"
-                    style="width:48px; border-radius:12px; box-shadow:0 0 15px rgba(255,255,255,0.2);"></span>
+            <span id="orbitalCenterText"><img src="/static/img/Logo/logo.svg" style="width:48px; border-radius:12px; box-shadow:0 0 15px rgba(255,255,255,0.2);"></span>
         </div>
-        <!-- Genre nodes injected by JS -->
     </div>
     <div class="orbital-expanded" id="orbitalExpanded">
         <div class="movie-grid stagger-children" id="orbitalMovies"></div>
     </div>
 </section>
 
-<!-- Content Sections -->
+<!-- Content Sections (Additional carousels) -->
 <div id="contentSections">
     <section class="section">
         <div class="section-header">
@@ -59,6 +181,9 @@
     let allGenresWithMovies = [];
 
     document.addEventListener('DOMContentLoaded', async () => {
+        // Initialize counter animations
+        initCounterAnimations();
+        
         try {
             const data = await API.catalog.homepage();
             renderHomepage(data);
@@ -81,19 +206,29 @@
         if (data.featured && data.featured.length > 0) {
             heroMovies = data.featured;
             renderHero(heroMovies[0], 0);
+        }
 
-            // Auto-rotate hero every 6 seconds
-            if (heroMovies.length > 1) {
-                heroRotateTimer = setInterval(() => {
-                    heroIndex = (heroIndex + 1) % heroMovies.length;
-                    renderHero(heroMovies[heroIndex], heroIndex);
-                }, 6000);
+        // Render spotlight card if featured exists
+        if (data.featured && data.featured.length > 0) {
+            const spotlightContainer = document.getElementById('spotlightCard');
+            if (spotlightContainer) {
+                spotlightContainer.innerHTML = buildMovieCard(data.featured[0], 'spotlight', { showDescription: true, showBadges: true });
             }
+        }
 
-            // Apply theme from first hero poster
-            if (heroMovies[0].poster_display) {
-                ThemeEngine.extractAndApply(heroMovies[0].poster_display);
+        // Render trending carousel
+        if (data.trending && data.trending.length) {
+            const trendingContainer = document.getElementById('trendingCarousel');
+            if (trendingContainer) {
+                trendingContainer.innerHTML = data.trending.slice(0, 10).map(m => buildMovieCard(m, 'standard', { showBadges: true })).join('');
+                initCardTilt();
             }
+        }
+
+        // Show continue watching if logged in
+        if (currentUser) {
+            loadContinueWatching();
+            document.getElementById('continueWatchingSection').style.display = 'block';
         }
 
         // Orbital genre ring
@@ -102,60 +237,27 @@
             renderOrbitalRing(data.genres_with_movies);
         }
 
-        // Content sections
+        // Additional content sections
         let sections = '';
-
-        if (currentUser) loadContinueWatching();
-        sections += '<div id="continueWatchingSection"></div>';
-
-        // Spotlight card for top featured movie
-        if (data.featured && data.featured.length > 0) {
-            sections += `
-                <section class="section">
-                    <div class="section-header">
-                        <h2 class="section-title"><img src="/static/img/Logo/logo.svg" style="width:24px; vertical-align:middle; display:inline-block; border-radius:4px; margin-right:8px;"> Editor's Pick</h2>
-                    </div>
-                    <div style="padding:0 var(--space-xl);max-width:var(--container-max);margin:0 auto;">
-                        ${buildMovieCard(data.featured[0], 'spotlight', { showDescription: true, showBadges: true })}
-                    </div>
-                </section>
-            `;
+        
+        if (data.new_releases && data.new_releases.length) {
+            sections += createCarousel('newReleasesCarousel', '<i class="fas fa-clock" style="color: var(--color-cinema-teal);"></i> New Releases', data.new_releases, false, '/browse/?sort=-created_at');
         }
-
-        if (data.trending && data.trending.length) {
-            sections += createCarousel('trendingCarousel', '<img src="/static/img/Logo/intense.svg" style="width:24px; vertical-align:middle; display:inline-block; border-radius:4px; margin-right:8px;"> Trending Now', data.trending, false, '/browse/?sort=-trending_score');
-        }
-
-        // Banner card for top new release
-        if (data.new_releases && data.new_releases.length > 0) {
-            sections += `
-                <section class="section">
-                    <div class="section-header">
-                        <h2 class="section-title"><img src="/static/img/Logo/epic.svg" style="width:24px; vertical-align:middle; display:inline-block; border-radius:4px; margin-right:8px;"> Latest Release</h2>
-                    </div>
-                    <div style="padding:0 var(--space-xl);max-width:var(--container-max);margin:0 auto;">
-                        ${buildMovieCard(data.new_releases[0], 'banner', { showDescription: true, showBadges: true })}
-                    </div>
-                </section>
-            `;
-        }
-
-        if (data.new_releases && data.new_releases.length > 1) {
-            sections += createCarousel('newCarousel', '<img src="/static/img/Logo/epic.svg" style="width:24px; vertical-align:middle; display:inline-block; border-radius:4px; margin-right:8px;"> New Releases', data.new_releases.slice(1), false, '/browse/?sort=-created_at');
-        }
+        
         if (data.top_rated && data.top_rated.length) {
-            sections += createCarousel('topRatedCarousel', '<img src="/static/img/Logo/star.svg" style="width:24px; vertical-align:middle; display:inline-block; border-radius:4px; margin-right:8px;"> Top Rated', data.top_rated, false, '/browse/?sort=-rating');
+            sections += createCarousel('topRatedCarousel', '<i class="fas fa-star" style="color: var(--color-cinema-amber);"></i> Top Rated', data.top_rated, false, '/browse/?sort=-rating');
         }
+        
         if (data.featured && data.featured.length > 1) {
-            sections += createCarousel('featuredCarousel', '<img src="/static/img/Logo/logo.svg" style="width:24px; vertical-align:middle; display:inline-block; border-radius:4px; margin-right:8px;"> Featured', data.featured.slice(1), false, '', 'hero');
+            sections += createCarousel('featuredCarousel', '<i class="fas fa-crown" style="color: var(--color-cinema-gold);"></i> Featured', data.featured.slice(1), false, '', 'hero');
         }
 
         // Genre sections
         if (data.genres_with_movies) {
-            data.genres_with_movies.forEach(gm => {
+            data.genres_with_movies.slice(0, 4).forEach(gm => {
                 if (gm.movies.length > 0) {
                     const id = `genre_${gm.genre.slug}_carousel`;
-                    sections += createCarousel(id, gm.genre.name, gm.movies, false, `/genre/${gm.genre.slug}/`);
+                    sections += createCarousel(id, gm.genre.name, gm.movies.slice(0, 6), false, `/genre/${gm.genre.slug}/`);
                 }
             });
         }
@@ -167,145 +269,21 @@
     function renderHero(movie, index) {
         const heroSection = document.getElementById('heroSection');
         const backdrop = movie.backdrop_display || movie.poster_display || '';
-
-        heroSection.innerHTML = `
-        <div class="hero" id="heroArea">
-            <div class="hero-parallax-blur" style="background-image: url('${escapeHtml(backdrop)}')"></div>
-            <div class="hero-backdrop cinematic-enter" style="background-image: url('${escapeHtml(backdrop)}')"></div>
-            <div class="hero-spotlight" id="heroSpotlight"></div>
-            <div class="hero-content">
-                <div class="hero-info-panel fade-in">
-                    <div class="hero-meta">
-                        ${movie.rating ? `<span class="hero-meta-item"><span class="rating">⭐ ${movie.rating.toFixed(1)}</span></span>` : ''}
-                        <span class="hero-meta-item">${movie.release_year || ''}</span>
-                        ${movie.duration ? `<span class="hero-meta-item">🕐 ${movie.duration} min</span>` : ''}
-                        <span class="hero-meta-item">${(movie.content_type || '').toUpperCase()}</span>
-                    </div>
-                    <h1 class="hero-title">${escapeHtml(movie.title)}</h1>
-                    <p class="hero-description">${escapeHtml(movie.description?.substring(0, 180) || '')}</p>
-                    <div class="hero-actions">
-                        <button class="btn btn-primary btn-lg" onclick="navigateTo('/movie/${escapeHtml(movie.slug)}/')">
-                            <i class="fas fa-play"></i> Watch Now
-                        </button>
-                        <button class="btn btn-ghost btn-lg" onclick="navigateTo('/movie/${escapeHtml(movie.slug)}/')">
-                            <i class="fas fa-info-circle"></i> More Info
-                        </button>
-                    </div>
-                    ${heroMovies.length > 1 ? `
-                    <div class="hero-dots">
-                        ${heroMovies.map((_, i) =>
-            `<div class="hero-dot ${i === index ? 'active' : ''}" onclick="goToHero(${i})"></div>`
-        ).join('')}
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-        </div>
-    `;
-
-        // Mouse spotlight follow
-        const spotlight = document.getElementById('heroSpotlight');
-        const heroArea = document.getElementById('heroArea');
-        if (heroArea && spotlight) {
-            heroArea.addEventListener('mousemove', (e) => {
-                const rect = heroArea.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                spotlight.style.background = `radial-gradient(ellipse 400px 400px at ${x}% ${y}%, rgba(255,255,255,0.03) 0%, transparent 70%)`;
-            });
-        }
-    }
-
-    function goToHero(index) {
-        heroIndex = index;
-        renderHero(heroMovies[index], index);
-        if (heroMovies[index].poster_display) {
-            ThemeEngine.extractAndApply(heroMovies[index].poster_display);
-        }
-        // Reset timer
-        clearInterval(heroRotateTimer);
-        if (heroMovies.length > 1) {
-            heroRotateTimer = setInterval(() => {
-                heroIndex = (heroIndex + 1) % heroMovies.length;
-                renderHero(heroMovies[heroIndex], heroIndex);
-            }, 6000);
-        }
-    }
-
-    function renderOrbitalRing(genresWithMovies) {
-        const section = document.getElementById('orbitalSection');
-        const container = document.getElementById('orbitalRingContainer');
-        section.style.display = 'block';
-
-        const genreIcons = {
-            'action': '<img src="/static/img/Logo/intense.svg" style="width:24px; border-radius:50%;">',
-            'comedy': '<img src="/static/img/Logo/feelgood.svg" style="width:24px; border-radius:50%;">',
-            'drama': '<img src="/static/img/Logo/chill.svg" style="width:24px; border-radius:50%;">',
-            'horror': '<img src="/static/img/Logo/dark.svg" style="width:24px; border-radius:50%;">',
-            'sci-fi': '<img src="/static/img/Logo/epic.svg" style="width:24px; border-radius:50%;">',
-            'romance': '<img src="/static/img/Logo/romantic.svg" style="width:24px; border-radius:50%;">',
-            'thriller': '<img src="/static/img/Logo/intense.svg" style="width:24px; border-radius:50%;">',
-            'animation': '<img src="/static/img/Logo/feelgood.svg" style="width:24px; border-radius:50%;">',
-            'documentary': '<img src="/static/img/Logo/think.svg" style="width:24px; border-radius:50%;">',
-            'fantasy': '<img src="/static/img/Logo/epic.svg" style="width:24px; border-radius:50%;">',
-            'mystery': '<img src="/static/img/Logo/dark.svg" style="width:24px; border-radius:50%;">',
-            'adventure': '<img src="/static/img/Logo/epic.svg" style="width:24px; border-radius:50%;">',
-            'crime': '<img src="/static/img/Logo/intense.svg" style="width:24px; border-radius:50%;">',
-            'music': '<img src="/static/img/Logo/feelgood.svg" style="width:24px; border-radius:50%;">',
-            'war': '<img src="/static/img/Logo/intense.svg" style="width:24px; border-radius:50%;">',
-            'western': '<img src="/static/img/Logo/logo.svg" style="width:24px; border-radius:50%;">',
-            'family': '<img src="/static/img/Logo/feelgood.svg" style="width:24px; border-radius:50%;">',
-            'history': '<img src="/static/img/Logo/think.svg" style="width:24px; border-radius:50%;">',
-            'sport': '<img src="/static/img/Logo/logo.svg" style="width:24px; border-radius:50%;">',
-            'biography': '<img src="/static/img/Logo/think.svg" style="width:24px; border-radius:50%;">'
-        };
-
-        const total = genresWithMovies.length;
-        const radius = 42; // percentage of container
-
-        genresWithMovies.forEach((gm, i) => {
-            const angle = (i / total) * 2 * Math.PI - Math.PI / 2;
-            const x = 50 + radius * Math.cos(angle);
-            const y = 50 + radius * Math.sin(angle);
-            const slug = gm.genre.slug.toLowerCase();
-            const icon = genreIcons[slug] || '<img src="/static/img/Logo/logo.svg" style="width:24px; border-radius:50%;">';
-
-            const node = document.createElement('div');
-            node.className = 'orbital-node';
-            node.style.left = `calc(${x}% - 35px)`;
-            node.style.top = `calc(${y}% - 35px)`;
-            node.setAttribute('data-genre-slug', gm.genre.slug);
-            node.innerHTML = `
-            <span class="orbital-node-icon">${icon}</span>
-            <span class="orbital-node-label">${escapeHtml(gm.genre.name)}</span>
-            <span class="orbital-node-count">${gm.movies.length}</span>
-        `;
-            node.addEventListener('click', () => selectOrbitalGenre(gm));
-            container.appendChild(node);
-        });
-    }
-
-    function selectOrbitalGenre(gm) {
-        // Update active node
-        document.querySelectorAll('.orbital-node').forEach(n => n.classList.remove('active'));
-        const activeNode = document.querySelector(`.orbital-node[data-genre-slug="${gm.genre.slug}"]`);
-        if (activeNode) activeNode.classList.add('active');
-
-        // Update center
-        document.getElementById('orbitalCenterText').textContent = gm.genre.name;
-
-        // Show movies
-        const expanded = document.getElementById('orbitalExpanded');
-        const grid = document.getElementById('orbitalMovies');
-        expanded.classList.add('active');
-        grid.innerHTML = gm.movies.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('');
+        
+        heroSection.style.backgroundImage = backdrop ? `url('${escapeHtml(backdrop)}')` : '';
+        heroSection.style.backgroundSize = 'cover';
+        heroSection.style.backgroundPosition = 'center';
     }
 
     async function loadContinueWatching() {
+        const section = document.getElementById('continueWatchingSection');
+        const carousel = document.getElementById('continueCarousel');
+        
+        if (!section || !carousel) return;
+        
         try {
             const history = await API.auth.continueWatching();
-            const section = document.getElementById('continueWatchingSection');
-            if (history && history.length > 0 && section) {
+            if (history && history.length > 0) {
                 const movies = history.map(h => ({
                     id: h.movie_id,
                     title: h.movie_title,
@@ -313,9 +291,66 @@
                     poster_display: h.movie_poster,
                     progress: h.progress,
                 }));
-                section.innerHTML = createCarousel('continueCarousel', '<img src="/static/img/Logo/logo.svg" style="width:24px; vertical-align:middle; display:inline-block; border-radius:4px; margin-right:8px;"> Continue Watching', movies, true);
+                carousel.innerHTML = movies.map(m => buildMovieCard(m, 'compact', { 
+                    showProgress: true, 
+                    progressPercent: m.progress || 0 
+                })).join('');
+                section.style.display = 'block';
             }
         } catch { }
+    }
+
+    function renderOrbitalRing(genresWithMovies) {
+        const section = document.getElementById('orbitalSection');
+        const container = document.getElementById('orbitalRingContainer');
+        if (!section || !container) return;
+        
+        section.style.display = 'block';
+
+        const genreIcons = {
+            'action': '<i class="fas fa-fist-raised"></i>',
+            'comedy': '<i class="fas fa-smile"></i>',
+            'drama': '<i class="fas fa-masks-theater"></i>',
+            'horror': '<i class="fas fa-ghost"></i>',
+            'sci-fi': '<i class="fas fa-rocket"></i>',
+            'romance': '<i class="fas fa-heart"></i>',
+        };
+
+        const total = genresWithMovies.length;
+        const radius = 42;
+
+        genresWithMovies.forEach((gm, i) => {
+            const angle = (i / total) * 2 * Math.PI - Math.PI / 2;
+            const x = 50 + radius * Math.cos(angle);
+            const y = 50 + radius * Math.sin(angle);
+            const icon = genreIcons[gm.genre.slug.toLowerCase()] || '<i class="fas fa-film"></i>';
+
+            const node = document.createElement('div');
+            node.className = 'orbital-node';
+            node.style.left = `calc(${x}% - 35px)`;
+            node.style.top = `calc(${y}% - 35px)`;
+            node.setAttribute('data-genre-slug', gm.genre.slug);
+            node.innerHTML = `
+                <span class="orbital-node-icon">${icon}</span>
+                <span class="orbital-node-label">${escapeHtml(gm.genre.name)}</span>
+                <span class="orbital-node-count">${gm.movies.length}</span>
+            `;
+            node.addEventListener('click', () => selectOrbitalGenre(gm));
+            container.appendChild(node);
+        });
+    }
+
+    function selectOrbitalGenre(gm) {
+        document.querySelectorAll('.orbital-node').forEach(n => n.classList.remove('active'));
+        const activeNode = document.querySelector(`.orbital-node[data-genre-slug="${gm.genre.slug}"]`);
+        if (activeNode) activeNode.classList.add('active');
+
+        document.getElementById('orbitalCenterText').textContent = gm.genre.name;
+
+        const expanded = document.getElementById('orbitalExpanded');
+        const grid = document.getElementById('orbitalMovies');
+        expanded.classList.add('active');
+        grid.innerHTML = gm.movies.map(m => buildMovieCard(m, 'standard', { showBadges: true, showGenres: true })).join('');
     }
 </script>
 {% endblock %}
