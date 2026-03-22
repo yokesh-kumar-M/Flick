@@ -137,8 +137,7 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
 ]
 
-def add_cache_headers(self, request, path, mode):
-    return [('Cache-Control', 'public, max-age=31536000')]
+# Removed custom add_cache_headers since WHITENOISE_MAX_AGE handles it
 
 WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_MIMETYPES = {
@@ -147,7 +146,8 @@ WHITENOISE_MIMETYPES = {
     '.ts': 'video/MP2T',
     '.webm': 'video/webm',
 }
-WHITENOISE_ADD_HEADERS_FUNCTION = add_cache_headers
+# Using default Whitenoise header logic
+
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
