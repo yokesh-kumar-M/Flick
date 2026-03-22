@@ -83,6 +83,9 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:8000').split(',') if o.strip()]
@@ -193,3 +196,19 @@ USER_RATE_LIMIT = os.environ.get('USER_RATE_LIMIT', '100/hour')
 import sys
 sys.path.insert(0, str(BASE_DIR.parent / 'shared'))
 sys.path.insert(0, str(BASE_DIR.parent))
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Flick Streaming Platform API',
+    'DESCRIPTION': 'Enterprise-grade microservices streaming platform',
+    'VERSION': '2.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'auth', 'description': 'Authentication endpoints'},
+        {'name': 'catalog', 'description': 'Movie and content catalog'},
+        {'name': 'access', 'description': 'Subscriptions and access control'},
+        {'name': 'streaming', 'description': 'Video streaming'},
+        {'name': 'recommendations', 'description': 'Content recommendations'},
+        {'name': 'notifications', 'description': 'User notifications'},
+    ],
+}

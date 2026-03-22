@@ -1,0 +1,155 @@
+/* ═══════════════════════════════════════════
+   Flick — CINEMATIC Design System
+   Multi-Million Dollar Premium Streaming
+   ═══════════════════════════════════════════ */
+
+/* Google Fonts Inter: https://fonts.google.com/specimen/Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+    /* ── Core OLED Palette ── */
+    --theme-primary: #ffffff;
+    --theme-primary-rgb: 255, 255, 255;
+    --theme-accent: #d4d4d8;
+    --theme-accent-rgb: 212, 212, 216;
+    --theme-bg: #000000;
+    --theme-bg-rgb: 0, 0, 0;
+    --theme-surface: #09090b;
+    --theme-surface-rgb: 9, 9, 11;
+    --theme-surface-2: #18181b;
+    --theme-surface-2-rgb: 24, 24, 27;
+    --theme-text: #fafafa;
+    --theme-text-secondary: #a1a1aa;
+    --theme-text-muted: #52525b;
+    --theme-border: #27272a;
+
+    /* ── CINEMATIC ACCENT COLORS ── */
+    --color-cinema-gold: #F5A623;
+    --color-cinema-crimson: #E50914;
+    --color-cinema-violet: #7C3AED;
+    --color-cinema-teal: #0891B2;
+    --color-cinema-amber: #D97706;
+
+    /* ── Glassmorphism (Frosted, hyper-minimal) ── */
+    --glass-bg: rgba(9, 9, 11, 0.7);
+    --glass-bg-light: rgba(255, 255, 255, 0.03);
+    --glass-bg-medium: rgba(9, 9, 11, 0.85);
+    --glass-bg-heavy: rgba(0, 0, 0, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-border-bright: rgba(255, 255, 255, 0.12);
+    --glass-blur: 32px;
+    --glass-blur-heavy: 48px;
+
+    /* ── CINEMATIC GRADIENTS ── */
+    --gradient-cinema: linear-gradient(135deg, #7C3AED 0%, #E50914 50%, #F5A623 100%);
+    --gradient-hero: linear-gradient(to right, #000000 0%, rgba(0,0,0,0) 60%);
+    --gradient-gold: linear-gradient(135deg, #F5A623, #D97706);
+    --gradient-premium: linear-gradient(135deg, #7C3AED, #2563EB);
+    --gradient-fire: linear-gradient(135deg, #E50914, #F5A623);
+    
+    /* ── Gradients (Legacy) ── */
+    --gradient-primary: linear-gradient(135deg, #ffffff, #d4d4d8);
+    --gradient-aurora: linear-gradient(135deg, #18181b, #09090b, #000000);
+    --gradient-dark: linear-gradient(180deg, transparent 0%, var(--theme-bg) 100%);
+    --gradient-card: linear-gradient(180deg, rgba(24, 24, 27, 0.4), rgba(9, 9, 11, 0.2));
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+    --gradient-radial-glow: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+    --gradient-hero-overlay: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.95) 80%, var(--theme-bg) 100%);
+
+    /* ── CINEMATIC SHADOWS WITH COLORED GLOWS ── */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.8);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.9);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.95);
+    --shadow-xl: 0 24px 64px rgba(0, 0, 0, 1);
+    --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.1);
+    --shadow-glow-lg: 0 0 40px rgba(255, 255, 255, 0.15);
+    --shadow-neon: 0 0 10px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 0.05);
+    --shadow-card-hover: 0 12px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.15);
+    
+    /* Cinematic colored glows */
+    --glow-gold: 0 0 20px rgba(245,166,35,0.4), 0 0 60px rgba(245,166,35,0.2);
+    --glow-crimson: 0 0 20px rgba(229,9,20,0.4), 0 0 60px rgba(229,9,20,0.15);
+    --glow-violet: 0 0 20px rgba(124,58,237,0.4), 0 0 60px rgba(124,58,237,0.15);
+
+    /* ── Transitions ── */
+    --transition-theme: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-medium: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-slow: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-spring: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+    /* ── Typography ── */
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+    --font-family-display: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+    
+    /* Font Sizes */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 2rem;
+    --font-size-3xl: 2.5rem;
+    --font-size-4xl: 3.5rem;
+    --font-size-5xl: 4.5rem;
+    --font-size-hero: 5.5rem;
+    
+    /* Letter spacing */
+    --letter-spacing-tight: -0.04em;
+    --letter-spacing-normal: -0.01em;
+    --letter-spacing-wide: 0.02em;
+    --letter-spacing-wider: 0.06em;
+    
+    /* Font Weights */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+
+    /* ── Spacing ── */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2.5rem;
+    --space-2xl: 4rem;
+    --space-3xl: 6rem;
+    --space-4xl: 8rem;
+
+    /* ── Border Radius ── */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-3xl: 32px;
+    --radius-full: 9999px;
+
+    /* ── Layout ── */
+    --navbar-height: 80px;
+    --container-max: 1600px;
+    --sidebar-width: 280px;
+
+    /* ── Mood Palette (Colored) ── */
+    --mood-intense: #E50914;
+    --mood-feelgood: #F5A623;
+    --mood-chill: #0891B2;
+    --mood-dark: #7C3AED;
+    --mood-mindblowing: #2563EB;
+    --mood-romantic: #EC4899;
+    --mood-brainteaser: #10B981;
+
+    /* ── Z-Index Scale ── */
+    --z-base: 1;
+    --z-dropdown: 100;
+    --z-navbar: 1000;
+    --z-modal: 2000;
+    --z-toast: 9000;
+    --z-particles: 0;
+    --z-cursor: 9998;
+    --z-loading: 9999;
+    --z-progress: 10000;
+}
