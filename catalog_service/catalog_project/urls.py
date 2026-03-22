@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 
 
 def health_check(request):
-    return JsonResponse({'status': 'healthy', 'service': 'catalog'})
+    return JsonResponse({'status': 'ok', 'service': 'catalog'})
 
 
 urlpatterns = [

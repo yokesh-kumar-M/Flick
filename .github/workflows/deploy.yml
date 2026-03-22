@@ -1,0 +1,63 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8 on all Python files
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  django-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - { path: 'gateway', name: 'gateway' }
+          - { path: 'auth_service', name: 'auth' }
+          - { path: 'catalog_service', name: 'catalog' }
+          - { path: 'access_service', name: 'access' }
+          - { path: 'streaming_service', name: 'streaming' }
+          - { path: 'recommendation_service', name: 'recommendation' }
+          - { path: 'notification_service', name: 'notification' }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r ${{ matrix.service.path }}/requirements.txt
+
+      - name: Run Django check for ${{ matrix.service.name }}
+        run: |
+          cd ${{ matrix.service.path }}
+          python manage.py check
+
+  deploy:
+    needs: [lint, django-check]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy notification
+        run: |
+          echo "✅ All checks passed! Deployment pipeline completed successfully."
+          echo "📦 Changes are ready to be deployed."

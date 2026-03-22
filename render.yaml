@@ -14,7 +14,8 @@ services:
   - type: redis
     name: flick-redis
     ipAllowList: []
-    plan: free # Render's new Key-Value Store or fallback to starter if needed
+    plan: free
+    region: oregon
     maxmemoryPolicy: allkeys-lru
 
   # ── Backend Microservices ──
@@ -22,7 +23,9 @@ services:
     name: flick-auth-service
     env: docker
     plan: free
+    region: oregon
     dockerfilePath: ./auth_service/Dockerfile
+    healthCheckPath: /health/
     envVars:
       - key: DEBUG
         value: "False"
@@ -38,7 +41,9 @@ services:
     name: flick-catalog-service
     env: docker
     plan: free
+    region: oregon
     dockerfilePath: ./catalog_service/Dockerfile
+    healthCheckPath: /health/
     envVars:
       - key: DEBUG
         value: "False"
@@ -54,7 +59,9 @@ services:
     name: flick-access-service
     env: docker
     plan: free
+    region: oregon
     dockerfilePath: ./access_service/Dockerfile
+    healthCheckPath: /health/
     envVars:
       - key: DEBUG
         value: "False"
@@ -65,7 +72,9 @@ services:
     name: flick-streaming-service
     env: docker
     plan: free
+    region: oregon
     dockerfilePath: ./streaming_service/Dockerfile
+    healthCheckPath: /health/
     envVars:
       - key: DEBUG
         value: "False"
@@ -91,7 +100,9 @@ services:
     name: flick-recommendation-service
     env: docker
     plan: free
+    region: oregon
     dockerfilePath: ./recommendation_service/Dockerfile
+    healthCheckPath: /health/
     envVars:
       - key: DEBUG
         value: "False"
@@ -117,7 +128,9 @@ services:
     name: flick-notification-service
     env: docker
     plan: free
+    region: oregon
     dockerfilePath: ./notification_service/Dockerfile
+    healthCheckPath: /health/
     envVars:
       - key: DEBUG
         value: "False"
@@ -129,7 +142,9 @@ services:
     name: flick-gateway
     env: docker
     plan: free
+    region: oregon
     dockerfilePath: ./gateway/Dockerfile
+    healthCheckPath: /health/
     envVars:
       - key: DEBUG
         value: "False"

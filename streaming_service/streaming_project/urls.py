@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 def health_check(request):
-    return JsonResponse({'status': 'healthy', 'service': 'streaming'})
+    return JsonResponse({'status': 'ok', 'service': 'streaming'})
 
 urlpatterns = [
     path('admin/', admin.site.urls),

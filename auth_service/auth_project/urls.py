@@ -7,7 +7,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 
 def health_check(request):
-    return JsonResponse({'status': 'healthy', 'service': 'auth_service'})
+    return JsonResponse({'status': 'ok', 'service': 'auth_service'})
 
 
 urlpatterns = [
