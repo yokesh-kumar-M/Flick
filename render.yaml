@@ -36,6 +36,16 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
 
   - type: web
     name: flick-catalog-service
@@ -54,6 +64,16 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
 
   - type: web
     name: flick-access-service
@@ -65,8 +85,23 @@ services:
     envVars:
       - key: DEBUG
         value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
 
   - type: web
     name: flick-streaming-service
@@ -95,6 +130,16 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
 
   - type: web
     name: flick-recommendation-service
@@ -123,6 +168,16 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
 
   - type: web
     name: flick-notification-service
@@ -134,8 +189,23 @@ services:
     envVars:
       - key: DEBUG
         value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
 
   # ── Gateway (Frontend + Routing) ──
   - type: web
@@ -150,6 +220,11 @@ services:
         value: "False"
       - key: SECRET_KEY
         generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
       - key: AUTH_SERVICE_URL
         fromService:
           type: web
@@ -180,3 +255,35 @@ services:
           type: web
           name: flick-notification-service
           property: hostport
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+# ──────────────────────────────────────────────────────────────────
+# SCALING HINTS
+# ──────────────────────────────────────────────────────────────────
+# For production scaling, update the following:
+#
+# 1. Auth Service: Scale to 2+ instances (handles authentication traffic)
+# 2. Catalog Service: Scale to 2+ instances (high read traffic for metadata)
+# 3. Access Service: Scale to 2+ instances (payment verification)
+# 4. Streaming Service: Scale to 3+ instances (video streaming is I/O intensive)
+# 5. Recommendation Service: Scale to 2+ instances (ML inference)
+# 6. Notification Service: Scale to 1-2 instances (background jobs)
+# 7. Gateway: Scale to 3+ instances (handles all traffic)
+#
+# For auto-scaling, add to each service:
+#   autoScale:
+#     enabled: true
+#     minInstances: 1
+#     maxInstances: 5
+#     targetCPUPercent: 70
+#
+# Redis can be upgraded to paid plan for better performance at scale.

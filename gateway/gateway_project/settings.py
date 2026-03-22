@@ -18,6 +18,20 @@ env_render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if env_render_host:
     ALLOWED_HOSTS.append(env_render_host)
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/0'),
+        'OPTIONS': {
+            'socket_connect_timeout': 5,
+            'socket_timeout': 5,
+        }
+    }
+}
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,6 +54,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'shared.middleware.RequestTimingMiddleware',
+    'shared.middleware.ServiceCorrelationMiddleware',
 ]
 
 ROOT_URLCONF = 'gateway_project.urls'
@@ -75,6 +91,30 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+]
+
+def add_cache_headers(self, request, path, mode):
+    return [('Cache-Control', 'public, max-age=31536000')]
+
+WHITENOISE_MAX_AGE = 31536000
+WHITENOISE_MIMETYPES = {
+    '.mp4': 'video/mp4',
+    '.m3u8': 'application/x-mpegURL',
+    '.ts': 'video/MP2T',
+    '.webm': 'video/webm',
+}
+WHITENOISE_ADD_HEADERS_FUNCTION = add_cache_headers
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

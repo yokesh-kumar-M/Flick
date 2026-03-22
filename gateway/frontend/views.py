@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 from functools import wraps
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 
 
 def ensure_authenticated(view_func):
@@ -18,6 +20,8 @@ def ensure_authenticated(view_func):
 
 
 @ensure_authenticated
+@vary_on_cookie
+@cache_page(60 * 5)
 def home(request):
     return render(request, 'pages/home.html')
 
@@ -31,6 +35,8 @@ def register_page(request):
 
 
 @ensure_authenticated
+@vary_on_cookie
+@cache_page(60 * 2)
 def browse(request):
     return render(request, 'pages/browse.html')
 

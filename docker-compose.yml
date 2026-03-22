@@ -1,18 +1,29 @@
 version: '3.9'
 
 services:
-  # ── Infrastructure ──
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   nginx:
     image: nginx:alpine
@@ -23,14 +34,26 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Gateway Service (:8000) ──
   gateway:
     build: ./gateway
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./gateway:/app
       - media_data:/app/media
@@ -42,14 +65,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Auth Service (:8001) ──
   auth_service:
     build: ./auth_service
     ports:
       - "8001:8001"
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./auth_service:/app
     depends_on:
@@ -60,14 +95,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Catalog Service (:8002) ──
   catalog_service:
     build: ./catalog_service
     ports:
       - "8002:8002"
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./catalog_service:/app
       - media_data:/app/media
@@ -79,14 +126,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Access Service (:8003) ──
   access_service:
     build: ./access_service
     ports:
       - "8003:8003"
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./access_service:/app
     depends_on:
@@ -97,14 +156,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Streaming Service (:8004) ──
   streaming_service:
     build: ./streaming_service
     ports:
       - "8004:8004"
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./streaming_service:/app
       - media_data:/app/media
@@ -116,14 +187,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Recommendation Service (:8005) ──
   recommendation_service:
     build: ./recommendation_service
     ports:
       - "8005:8005"
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./recommendation_service:/app
     depends_on:
@@ -134,14 +217,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Notification Service (:8006) ──
   notification_service:
     build: ./notification_service
     ports:
       - "8006:8006"
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./notification_service:/app
     depends_on:
@@ -152,13 +247,25 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # ── Celery Workers ──
   celery_recommendation:
     build: ./recommendation_service
     command: celery -A recommendation_project worker -l info -B
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./recommendation_service:/app
     depends_on:
@@ -166,12 +273,25 @@ services:
         condition: service_healthy
       recommendation_service:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   celery_streaming:
     build: ./streaming_service
     command: celery -A streaming_project worker -l info
     env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./streaming_service:/app
       - media_data:/app/media
@@ -180,7 +300,17 @@ services:
         condition: service_healthy
       streaming_service:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
 volumes:
   redis_data:

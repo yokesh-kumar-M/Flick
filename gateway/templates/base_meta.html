@@ -1,0 +1,28 @@
+<!-- Open Graph Meta Tags -->
+<meta property="og:title" content="{% block og_title %}Flick - Premium Streaming Platform{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Stream thousands of movies and TV shows instantly. Experience cinema-quality entertainment at home.{% endblock %}">
+<meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/Logo/logo.svg' %}{% endblock %}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
+<meta property="og:site_name" content="Flick">
+
+<!-- Twitter Card Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{% block twitter_title %}Flick - Premium Streaming Platform{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}Stream thousands of movies and TV shows instantly.{% endblock %}">
+<meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/Logo/logo.svg' %}{% endblock %}">
+
+<!-- Canonical URL -->
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+
+<!-- DNS Prefetch for Backend Services -->
+<link rel="dns-prefetch" href="//auth_service">
+<link rel="dns-prefetch" href="//catalog_service">
+<link rel="dns-prefetch" href="//access_service">
+<link rel="dns-prefetch" href="//streaming_service">
+<link rel="dns-prefetch" href="//recommendation_service">
+<link rel="dns-prefetch" href="//notification_service">
+
+<!-- Preconnect to external resources -->
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">

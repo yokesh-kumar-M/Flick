@@ -3,15 +3,17 @@ from django.urls import path, include
 from django.http import JsonResponse
 from django.conf import settings
 from django.conf.urls.static import static
+from frontend.health_views import health_check, metrics
 
 
-def health_check(request):
+def health_check_old(request):
     return JsonResponse({'status': 'ok', 'service': 'gateway'})
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('health/', health_check),
+    path('metrics/', metrics),
     path('proxy/', include('frontend.proxy_urls')),
     path('', include('frontend.urls')),
 ]
