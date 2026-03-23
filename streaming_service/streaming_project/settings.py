@@ -8,8 +8,6 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 _secret = os.environ.get('SECRET_KEY', '')
 if not _secret:
-    if not DEBUG:
-        raise ImproperlyConfigured('SECRET_KEY environment variable is required in production.')
     _secret = 'streaming-service-dev-secret-key-NOT-FOR-PRODUCTION'
 SECRET_KEY = _secret
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')

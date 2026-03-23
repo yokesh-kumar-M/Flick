@@ -13,9 +13,7 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app/catalog_service
 RUN python manage.py collectstatic --noinput 2>/dev/null || true
-RUN python manage.py migrate
-RUN python manage.py seed_catalog
 
 EXPOSE 8002
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8002", "--workers", "2", "--threads", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "120", "--keep-alive", "5", "catalog_project.asgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py seed_catalog && gunicorn --bind 0.0.0.0:8002 --workers 2 --threads 4 --worker-class uvicorn.workers.UvicornWorker --timeout 120 --keep-alive 5 catalog_project.asgi:application"]
