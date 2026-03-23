@@ -87,7 +87,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:8000').split(',') if o.strip()]
+CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:8000,https://flick-gateway.onrender.com').split(',') if o.strip()]
 CORS_ALLOW_CREDENTIALS = True
 
 if not DEBUG:
@@ -259,3 +259,5 @@ REST_FRAMEWORK.update({
 if DEBUG:
     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'].append('rest_framework.renderers.BrowsableAPIRenderer')
 
+
+CSRF_TRUSTED_ORIGINS = ['https://flick-gateway.onrender.com']
