@@ -164,12 +164,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 def _ensure_http(url):
     return url if url.startswith('http') else f'http://{url}'
 
-AUTH_SERVICE_URL = _ensure_http(os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001'))
-CATALOG_SERVICE_URL = _ensure_http(os.environ.get('CATALOG_SERVICE_URL', 'http://localhost:8002'))
-ACCESS_SERVICE_URL = _ensure_http(os.environ.get('ACCESS_SERVICE_URL', 'http://localhost:8003'))
-STREAMING_SERVICE_URL = _ensure_http(os.environ.get('STREAMING_SERVICE_URL', 'http://localhost:8004'))
-RECOMMENDATION_SERVICE_URL = _ensure_http(os.environ.get('RECOMMENDATION_SERVICE_URL', 'http://localhost:8005'))
-NOTIFICATION_SERVICE_URL = _ensure_http(os.environ.get('NOTIFICATION_SERVICE_URL', 'http://localhost:8006'))
+AUTH_SERVICE_URL = _ensure_http(os.environ.get('AUTH_SERVICE_URL', 'https://flick-auth-service.onrender.com'))
+CATALOG_SERVICE_URL = _ensure_http(os.environ.get('CATALOG_SERVICE_URL', 'https://flick-catalog-service.onrender.com'))
+ACCESS_SERVICE_URL = _ensure_http(os.environ.get('ACCESS_SERVICE_URL', 'https://flick-access-service.onrender.com'))
+STREAMING_SERVICE_URL = _ensure_http(os.environ.get('STREAMING_SERVICE_URL', 'https://flick-streaming-service.onrender.com'))
+RECOMMENDATION_SERVICE_URL = _ensure_http(os.environ.get('RECOMMENDATION_SERVICE_URL', 'https://flick-recommendation-service.onrender.com'))
+NOTIFICATION_SERVICE_URL = _ensure_http(os.environ.get('NOTIFICATION_SERVICE_URL', 'https://flick-notification-service.onrender.com'))
 
 LOGGING = {
     'version': 1,
