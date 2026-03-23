@@ -1,0 +1,26 @@
+--- streaming_service/streaming/views.py	2023-10-24
++++ streaming_service/streaming/views.py	2023-10-24
+@@ -10,6 +10,7 @@
+ 
+ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+ from shared.jwt_utils import decode_token, generate_signed_url
++from shared.events import event_bus
+ 
+ 
+ def get_user_payload(request):
+@@ -43,6 +44,14 @@
+     # Generate signed URL for the master playlist
+     playlist_path = f"/api/streaming/hls/{movie_id}/master.m3u8"
+     signed_url = generate_signed_url(playlist_path)
++    
++    # Publish video_played event asynchronously
++    try:
++        event_bus.publish('video_events', 'video_started', {
++            'user_id': payload['user_id'],
++            'movie_id': movie_id,
++            'session_token': session_token
++        })
++    except Exception:
++        pass # Do not block streaming if event bus fails
+ 
+     return Response({

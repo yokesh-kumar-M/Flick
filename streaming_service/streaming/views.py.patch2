@@ -1,0 +1,18 @@
+--- streaming_service/streaming/views.py
++++ streaming_service/streaming/views.py
+@@ -107,6 +107,15 @@
+         session.is_active = False
+         session.save()
++        
++        try:
++            event_bus.publish('video_events', 'video_ended', {
++                'user_id': session.user_id,
++                'movie_id': session.movie_id,
++                'session_token': session_token
++            })
++        except Exception:
++            pass
++
+         return Response({'status': 'ended'})
+     except StreamSession.DoesNotExist:
+         return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)

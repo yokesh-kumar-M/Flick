@@ -11,3 +11,4 @@ dj-database-url==2.2.*
 psycopg2-binary==2.9.*
 
 elasticsearch>=8.10.0
+django-redis==5.4.*
