@@ -48,7 +48,7 @@ def register(request):
     user.set_password(serializer.validated_data['password'])
     user.save()
 
-    access_token = create_access_token(user.id, user.username, user.is_admin)
+    access_token = create_access_token(user.id, user.username, user.is_admin, user.has_super_access)
     refresh_token = create_refresh_token(user.id)
 
     response_data = {
@@ -96,7 +96,7 @@ def login(request):
     if not user.is_active:
         return Response({'error': 'Account is deactivated'}, status=status.HTTP_403_FORBIDDEN)
 
-    access_token = create_access_token(user.id, user.username, user.is_admin)
+    access_token = create_access_token(user.id, user.username, user.is_admin, user.has_super_access)
     refresh_token = create_refresh_token(user.id)
 
     response_data = {
@@ -129,7 +129,7 @@ def refresh_token(request):
     except FlickUser.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    access_token = create_access_token(user.id, user.username, user.is_admin)
+    access_token = create_access_token(user.id, user.username, user.is_admin, user.has_super_access)
     new_refresh_token = create_refresh_token(user.id)
 
     response = Response({

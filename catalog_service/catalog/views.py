@@ -12,6 +12,8 @@ from .serializers import (
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from shared.jwt_utils import decode_token
+from .search_engine import search_movies_es, sync_movie_to_es
+
 
 
 def get_user_payload(request):
@@ -254,8 +256,15 @@ def movie_create(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
     movie = serializer.save()
+    
+    # Sync to Elasticsearch in background
+    import threading
+    threading.Thread(target=sync_movie_to_es, args=(movie,)).start()
+    
     return Response(MovieDetailSerializer(movie).data, status=status.HTTP_201_CREATED)
+
 
 
 @api_view(['PUT', 'PATCH'])
@@ -367,6 +376,18 @@ def search(request):
     if len(query) < 2:
         return Response({'results': [], 'query': query})
 
+    # Try high-speed Elasticsearch first
+    es_results = search_movies_es(query)
+    
+    if es_results is not None:
+        return Response({
+            'results': es_results, # Already formatted
+            'query': query,
+            'total': len(es_results),
+            'source': 'elasticsearch'
+        })
+        
+    # Fallback to slow database query if ES fails or is offline
     movies = Movie.objects.filter(
         Q(title__icontains=query) |
         Q(description__icontains=query) |
@@ -380,8 +401,8 @@ def search(request):
         'results': MovieListSerializer(movies, many=True).data,
         'query': query,
         'total': movies.count() if hasattr(movies, 'count') else len(movies),
+        'source': 'database'
     })
-
 
 # ══════════════════════════════════════
 # Trending / Featured / New Releases

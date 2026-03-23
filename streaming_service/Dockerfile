@@ -19,4 +19,4 @@ RUN python manage.py migrate
 
 EXPOSE 8004
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8004", "--workers", "2", "--threads", "4", "--worker-class", "gthread", "--timeout", "120", "--keep-alive", "5", "streaming_project.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8004", "--workers", "2", "--threads", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "120", "--keep-alive", "5", "streaming_project.asgi:application"]

@@ -15,11 +15,12 @@ HMAC_SECRET = os.environ.get('HMAC_SECRET', 'flick-hmac-secret-2026')
 ACCESS_CODE_SECRET = os.environ.get('ACCESS_CODE_SECRET', 'flick-access-code-secret-2026')
 
 
-def create_access_token(user_id, username, is_admin=False):
+def create_access_token(user_id, username, is_admin=False, has_super_access=False):
     payload = {
         'user_id': user_id,
         'username': username,
         'is_admin': is_admin,
+        'has_super_access': has_super_access,
         'type': 'access',
         'iat': int(time.time()),
         'exp': int(time.time()) + (ACCESS_TOKEN_LIFETIME * 60),

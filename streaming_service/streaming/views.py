@@ -8,9 +8,12 @@ from datetime import timedelta
 from .models import TranscodeJob, StreamSession
 from .serializers import TranscodeJobSerializer, StreamSessionSerializer, StartStreamSerializer
 import uuid, os, sys
+import requests
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from shared.jwt_utils import decode_token, generate_signed_url
+from shared.events import event_bus
+
 
 
 def get_user_payload(request):
@@ -40,6 +43,30 @@ def start_stream(request):
 
     movie_id = serializer.validated_data['movie_id']
 
+    
+    is_admin = payload.get('is_admin', False)
+    has_super_access = payload.get('has_super_access', False)
+    
+    # Fast path for admins and super users
+    if not (is_admin or has_super_access):
+        # Query access service to verify the user has unlocked this movie
+        try:
+            # We need to forward the token
+            token = request.COOKIES.get('access_token') or request.META.get('HTTP_AUTHORIZATION', '').replace('Bearer ', '')
+            headers = {'Authorization': f'Bearer {token}'} if token else {}
+            access_url = os.environ.get('ACCESS_SERVICE_URL', 'http://access_service:8003')
+            resp = requests.get(f'{access_url}/api/access/check/{movie_id}/', headers=headers, timeout=3)
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                if not data.get('has_access', False):
+                    return Response({'error': 'Access Denied. You need to unlock this movie with an Access Key.'}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response({'error': 'Failed to verify access permissions.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': f'Access verification failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
     # Create stream session
     session_token = str(uuid.uuid4())
     session = StreamSession.objects.create(
@@ -49,9 +76,21 @@ def start_stream(request):
         quality=serializer.validated_data.get('quality', 'auto'),
     )
 
+
     # Generate signed URL for the master playlist
     playlist_path = f"/api/streaming/hls/{movie_id}/master.m3u8"
     signed_url = generate_signed_url(playlist_path)
+
+    # Publish video_played event
+    try:
+        event_bus.publish('video_events', 'video_started', {
+            'user_id': payload['user_id'],
+            'movie_id': movie_id,
+            'session_token': session_token
+        })
+    except Exception:
+        pass
+
 
     return Response({
         'session_token': session_token,
@@ -108,11 +147,24 @@ def end_stream(request):
     if not session_token:
         return Response({'error': 'Session token required'}, status=status.HTTP_400_BAD_REQUEST)
 
+
     try:
         session = StreamSession.objects.get(session_token=session_token)
         session.is_active = False
         session.save()
+        
+        # Publish video_ended event
+        try:
+            event_bus.publish('video_events', 'video_ended', {
+                'user_id': session.user_id,
+                'movie_id': session.movie_id,
+                'session_token': session_token
+            })
+        except Exception:
+            pass
+
         return Response({'status': 'ended'})
+
     except StreamSession.DoesNotExist:
         return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
 

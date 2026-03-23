@@ -7,6 +7,11 @@ urlpatterns = [
     path('check/<int:movie_id>/', views.check_access, name='check_access'),
     path('verify/', views.verify_code, name='verify_code'),
     
+    
+    # Hash/Unlock endpoints
+    path('unlock/', views.unlock_movie, name='unlock_movie'),
+    path('generate_hash/', views.generate_hash_manual, name='generate_hash_manual'),
+
     # User endpoints
     path('my-requests/', views.my_requests, name='my_requests'),
     path('my-grants/', views.my_grants, name='my_grants'),

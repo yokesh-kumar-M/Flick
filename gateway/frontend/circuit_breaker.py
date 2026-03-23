@@ -24,6 +24,26 @@ class CircuitBreaker:
         self.lock = threading.Lock()
 
     def call(self, func, *args, **kwargs):
+        self._check_state()
+        try:
+            result = func(*args, **kwargs)
+            self._on_success()
+            return result
+        except Exception as e:
+            self._on_failure()
+            raise e
+
+    async def async_call(self, func, *args, **kwargs):
+        self._check_state()
+        try:
+            result = await func(*args, **kwargs)
+            self._on_success()
+            return result
+        except Exception as e:
+            self._on_failure()
+            raise e
+
+    def _check_state(self):
         with self.lock:
             if self.state == CircuitState.OPEN:
                 if time.time() - self.last_failure_time >= self.recovery_timeout:
@@ -36,14 +56,6 @@ class CircuitBreaker:
                 if self.half_open_calls >= self.half_open_max_calls:
                     raise Exception(f"Circuit breaker for {self.service_name} is HALF_OPEN, max calls reached")
                 self.half_open_calls += 1
-
-        try:
-            result = func(*args, **kwargs)
-            self._on_success()
-            return result
-        except Exception as e:
-            self._on_failure()
-            raise e
 
     def _on_success(self):
         with self.lock:
