@@ -35,7 +35,6 @@ REQUEST_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
 # Global async client with connection pooling
 # limits: 100 max keepalive connections, 500 max total connections
 client_limits = httpx.Limits(max_keepalive_connections=100, max_connections=500)
-_async_client = httpx.AsyncClient(limits=client_limits, timeout=REQUEST_TIMEOUT)
 
 async def _parse_json_body(request):
     """Parse JSON body from request asynchronously."""
@@ -54,34 +53,35 @@ async def _make_request(method, url, headers, cookies, **kwargs):
     """Make HTTP request with retry logic using httpx."""
     last_error = None
     
-    for attempt in range(MAX_RETRIES + 1):
-        try:
-            # httpx automatically uses the shared connection pool
-            req = _async_client.build_request(
-                method=method, 
-                url=url, 
-                headers=headers, 
-                cookies=cookies, 
-                params=kwargs.get('params'),
-                json=kwargs.get('json'),
-                data=kwargs.get('data'),
-                files=kwargs.get('files')
-            )
-            resp = await _async_client.send(req)
-            resp.raise_for_status() # Raise on 4XX/5XX errors if we want circuit breaker to trigger. But proxy shouldn't trip cb on 4xx.
-            # Wait, proxy shouldn't trip on 400 Bad Request, only on 5XX or connection errors.
-            if resp.status_code >= 500:
-                raise httpx.HTTPStatusError(f"Server error: {resp.status_code}", request=req, response=resp)
-            return resp
-        except (httpx.ConnectError, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
-            last_error = e
-            if attempt < MAX_RETRIES:
-                await asyncio.sleep(RETRY_DELAY)
-        except Exception as e:
-            # For other unexpected errors, don't retry, just raise
-            raise e
-            
-    raise last_error
+    async with httpx.AsyncClient(limits=client_limits, timeout=REQUEST_TIMEOUT) as client:
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                # httpx automatically uses the shared connection pool
+                req = client.build_request(
+                    method=method, 
+                    url=url, 
+                    headers=headers, 
+                    cookies=cookies, 
+                    params=kwargs.get('params'),
+                    json=kwargs.get('json'),
+                    data=kwargs.get('data'),
+                    files=kwargs.get('files')
+                )
+                resp = await client.send(req)
+                resp.raise_for_status() # Raise on 4XX/5XX errors if we want circuit breaker to trigger. But proxy shouldn't trip cb on 4xx.
+                # Wait, proxy shouldn't trip on 400 Bad Request, only on 5XX or connection errors.
+                if resp.status_code >= 500:
+                    raise httpx.HTTPStatusError(f"Server error: {resp.status_code}", request=req, response=resp)
+                return resp
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    await asyncio.sleep(RETRY_DELAY)
+            except Exception as e:
+                # For other unexpected errors, don't retry, just raise
+                raise e
+                
+        raise last_error
 
 @csrf_exempt
 async def proxy_view(request, service, path=''):
