@@ -15,5 +15,10 @@
             "src": "/(.*)",
             "dest": "gateway/gateway_project/wsgi.py"
         }
-    ]
+    ],
+    "functions": {
+        "gateway/gateway_project/wsgi.py": {
+            "maxDuration": 60
+        }
+    }
 }

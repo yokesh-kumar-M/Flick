@@ -1,0 +1,23 @@
+name: Keep Render Services Awake
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Run every 10 minutes
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Auth Service
+        run: curl -s https://flick-auth-service.onrender.com/health/ > /dev/null || true
+      - name: Ping Catalog Service
+        run: curl -s https://flick-catalog-service.onrender.com/health/ > /dev/null || true
+      - name: Ping Access Service
+        run: curl -s https://flick-access-service.onrender.com/health/ > /dev/null || true
+      - name: Ping Streaming Service
+        run: curl -s https://flick-streaming-service.onrender.com/health/ > /dev/null || true
+      - name: Ping Recommendation Service
+        run: curl -s https://flick-recommendation-service.onrender.com/health/ > /dev/null || true
+      - name: Ping Notification Service
+        run: curl -s https://flick-notification-service.onrender.com/health/ > /dev/null || true

@@ -210,11 +210,26 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
         btn.disabled = true;
 
+        let slowWarning = setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Waking up servers (might take 50s)...';
+        }, 5000);
+
         try {
             const data = await API.auth.login({
                 username: document.getElementById('loginUsername').value,
                 password: document.getElementById('loginPassword').value,
             });
+            clearTimeout(slowWarning);
+            showToast('Welcome back!', 'success');
+            setTimeout(() => window.location.href = '/', 500);
+        } catch (err) {
+            clearTimeout(slowWarning);
+            errorEl.textContent = err.error || 'Invalid credentials';
+            errorEl.style.display = 'block';
+            btn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
+            btn.disabled = false;
+        }
+    });
             showToast('Welcome back!', 'success');
             setTimeout(() => window.location.href = '/', 500);
         } catch (err) {

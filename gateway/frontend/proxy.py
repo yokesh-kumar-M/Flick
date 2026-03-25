@@ -28,9 +28,9 @@ SERVICE_MAP = {
     'notifications': settings.NOTIFICATION_SERVICE_URL,
 }
 
-MAX_RETRIES = 2
+MAX_RETRIES = 1
 RETRY_DELAY = 0.5
-REQUEST_TIMEOUT = httpx.Timeout(20.0, connect=10.0)
+REQUEST_TIMEOUT = httpx.Timeout(60.0, connect=30.0)
 
 # Global async client with connection pooling
 # limits: 100 max keepalive connections, 500 max total connections
