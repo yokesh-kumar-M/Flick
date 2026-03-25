@@ -19,8 +19,8 @@ ALLOWED_HOSTS.append('*')
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/0'),
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'locmem://'),
         'OPTIONS': {
             'socket_connect_timeout': 5,
             'socket_timeout': 5,
