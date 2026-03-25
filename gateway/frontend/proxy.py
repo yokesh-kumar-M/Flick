@@ -30,7 +30,7 @@ SERVICE_MAP = {
 
 MAX_RETRIES = 2
 RETRY_DELAY = 0.5
-REQUEST_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
+REQUEST_TIMEOUT = httpx.Timeout(20.0, connect=10.0)
 
 # Global async client with connection pooling
 # limits: 100 max keepalive connections, 500 max total connections
