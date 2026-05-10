@@ -477,47 +477,27 @@ function buildMovieCard(movie, variant = 'standard', options = {}) {
                 </div>
             `;
 
-        case 'spotlight':
+        case 'wide':
             return `
-                <div class="movie-card-spotlight hover-lift" onclick="navigateTo('/movie/${escapeHtml(movie.slug)}/')">
-                    <div class="movie-card-spotlight-poster">
-                        <img src="${escapeHtml(movie.poster_display || imageUrl)}" 
-                             alt="${escapeHtml(movie.title)}"
-                             loading="lazy"
-                             onerror="this.src='/static/img/default-poster.svg'">
-                    </div>
-                    <div class="movie-card-spotlight-content">
+                <div class="movie-card-wide reveal-scale" onclick="navigateTo('/movie/${escapeHtml(movie.slug)}/')">
+                    <div class="wide-card-backdrop" style="background-image: url('${escapeHtml(movie.backdrop_display || movie.poster_display)}')"></div>
+                    <div class="wide-card-overlay">
                         ${badges ? `<div class="movie-card-badges">${badges}</div>` : ''}
-                        <h2 class="movie-card-spotlight-title">${escapeHtml(movie.title)}</h2>
-                        ${showDescription && movie.description ? `<p class="movie-card-spotlight-desc">${escapeHtml(movie.description.slice(0, 300))}...</p>` : ''}
-                        <div class="movie-card-spotlight-stats">
-                            <div class="movie-card-spotlight-stat">
-                                <span class="movie-card-spotlight-stat-value">${movie.release_year || '2024'}</span>
-                                <span class="movie-card-spotlight-stat-label">Year</span>
+                        <div class="wide-card-content">
+                            <h2 class="wide-card-title">${escapeHtml(movie.title)}</h2>
+                            <div class="wide-card-meta">
+                                <span class="meta-pill"><i class="fas fa-calendar"></i> ${movie.release_year || '2024'}</span>
+                                <span class="meta-pill"><i class="fas fa-clock"></i> ${durationText}</span>
+                                <span class="meta-pill rating"><i class="fas fa-star"></i> ${ratingText}</span>
                             </div>
-                            <div class="movie-card-spotlight-stat">
-                                <span class="movie-card-spotlight-stat-value">${durationText}</span>
-                                <span class="movie-card-spotlight-stat-label">Runtime</span>
+                            ${showDescription && movie.description ? `<p class="wide-card-desc">${escapeHtml(movie.description.slice(0, 220))}...</p>` : ''}
+                            <div class="wide-card-actions">
+                                <button class="btn btn-primary btn-lg"><i class="fas fa-play"></i> Play Movie</button>
+                                <button class="btn btn-ghost btn-lg" onclick="event.stopPropagation(); showToast('Added to watchlist', 'success')"><i class="fas fa-plus"></i> Watchlist</button>
                             </div>
-                            <div class="movie-card-spotlight-stat">
-                                <span class="movie-card-spotlight-stat-value">${ratingText}</span>
-                                <span class="movie-card-spotlight-stat-label">Rating</span>
-                            </div>
-                            <div class="movie-card-spotlight-stat">
-                                <span class="movie-card-spotlight-stat-value">${(movie.view_count || 0).toLocaleString()}</span>
-                                <span class="movie-card-spotlight-stat-label">Views</span>
-                            </div>
-                        </div>
-                        ${genrePills ? `<div class="movie-card-genres">${genrePills}</div>` : ''}
-                        <div class="movie-card-banner-actions" style="margin-top: var(--space-xl);">
-                            <button class="btn btn-primary btn-lg" onclick="event.stopPropagation(); navigateTo('/movie/${escapeHtml(movie.slug)}/')">
-                                <i class="fas fa-play"></i> Watch Now
-                            </button>
-                            <button class="btn btn-ghost btn-lg" onclick="event.stopPropagation(); showToast('Added to watchlist', 'success')">
-                                <i class="fas fa-bookmark"></i> Save
-                            </button>
                         </div>
                     </div>
+                    ${progressBar}
                 </div>
             `;
 

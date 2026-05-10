@@ -5,172 +5,411 @@
 
 {% block content %}
 <!-- Full Bleed Cinematic Hero Section -->
-<div id="heroSection" class="spotlight-container" style="position: relative; height: 100vh; min-height: 600px; overflow: hidden;">
-    <div class="hero" id="heroArea" style="position: absolute; inset: 0; background: var(--theme-surface);">
-        <div class="hero-backdrop skeleton" style="position: absolute; inset: 0;"></div>
+<div id="heroSection" class="hero-spotlight-container" style="position: relative; height: 100vh; min-height: 700px; overflow: hidden; background: #000;">
+    <div class="hero" id="heroArea" style="position: absolute; inset: 0; transform-origin: center center;">
+        <div class="hero-backdrop skeleton" id="heroBackdrop" style="position: absolute; inset: 0; background-size: cover; background-position: center;"></div>
+        <div class="hero-overlay-vignette" style="position: absolute; inset: 0; background: radial-gradient(circle at 70% 30%, transparent 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 100%); z-index: 1;"></div>
+        <div class="hero-overlay-gradient" style="position: absolute; inset: 0; background: linear-gradient(to right, #000 0%, rgba(0,0,0,0.8) 30%, transparent 100%), linear-gradient(to bottom, transparent 60%, #000 100%); z-index: 2;"></div>
     </div>
-    <div style="position: absolute; inset: 0; background: linear-gradient(to right, #000000 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 70%, transparent 100%); z-index: 1;"></div>
-    <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, #000 100%); z-index: 2;"></div>
-    <div class="hero-content" style="position: relative; z-index: 3; height: 100%; display: flex; flex-direction: column; justify-content: center; max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl);">
-        <div class="hero-info-panel fade-in" style="max-width: 700px;">
-            <h1 class="hero-title" style="font-family: var(--font-family-display); font-size: 72px; font-weight: 900; line-height: 1.05; margin-bottom: var(--space-md); background: linear-gradient(135deg, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                Experience Cinema.<br>Redefined.
+
+    <div class="hero-content-wrapper" style="position: relative; z-index: 10; height: 100%; display: flex; align-items: center; max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl);">
+        <div class="hero-info-panel" id="heroInfo" style="max-width: 800px; opacity: 0; transform: translateY(50px);">
+            <div class="hero-badge" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; background: rgba(124, 58, 237, 0.2); border: 1px solid rgba(124, 58, 237, 0.4); border-radius: var(--radius-full); margin-bottom: var(--space-lg); backdrop-filter: blur(10px);">
+                <i class="fas fa-sparkles" style="color: var(--color-cinema-gold);"></i>
+                <span style="font-size: var(--font-size-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #fff;">Premium Originals</span>
+            </div>
+            <h1 class="hero-display-title" style="font-family: var(--font-family-display); font-size: clamp(3rem, 8vw, 6rem); font-weight: 900; line-height: 1.0; margin-bottom: var(--space-md); letter-spacing: -0.04em;">
+                <span class="text-reveal-gradient">Cinema</span><br>
+                <span style="color: var(--theme-text);">Redefined.</span>
             </h1>
-            <p class="hero-description" style="font-size: var(--font-size-xl); color: var(--theme-text-secondary); margin-bottom: var(--space-xl); line-height: 1.6;">
-                Stream unlimited movies in stunning 4K. Zero ads. Premium originals. Your next favorite is waiting.
+            <p class="hero-description-text" style="font-size: var(--font-size-xl); color: var(--theme-text-secondary); margin-bottom: var(--space-2xl); line-height: 1.5; max-width: 600px;">
+                Stream unlimited 4K movies with zero ads. Experience the next generation of storytelling.
             </p>
-            <div class="hero-actions" style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
-                <button class="hero-cta-primary" onclick="navigateTo('/browse/')">
-                    <i class="fas fa-play"></i> Start Watching
+            <div class="hero-actions-row" style="display: flex; gap: var(--space-lg); flex-wrap: wrap;">
+                <button class="btn btn-primary btn-lg spotlight-btn" onclick="navigateTo('/browse/')">
+                    <i class="fas fa-play"></i> Start Watching Now
                 </button>
-                <button class="hero-cta-secondary" onclick="navigateTo('/browse/')">
-                    <i class="fas fa-plus"></i> See What's New
+                <button class="btn btn-ghost btn-lg" onclick="navigateTo('/search/')">
+                    <i class="fas fa-search"></i> Discover More
                 </button>
             </div>
+        </div>
+    </div>
+    
+    <!-- Hero Scroll Indicator -->
+    <div class="hero-scroll-hint" style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; color: var(--theme-text-muted);">Scroll to Explore</span>
+        <div class="scroll-mouse">
+            <div class="scroll-wheel"></div>
         </div>
     </div>
 </div>
 
-<!-- Animated Stat Counters -->
-<section class="section" style="background: linear-gradient(180deg, #000 0%, var(--theme-surface) 100%); padding: var(--space-3xl) 0;">
+<!-- Dynamic Counter Section -->
+<section class="counter-section" style="padding: var(--space-4xl) 0; position: relative; background: #000; overflow: hidden;">
     <div style="max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl);">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-xl); text-align: center;">
-            <div class="stat-counter-card">
-                <i class="fas fa-film stat-icon" style="color: var(--color-cinema-gold);"></i>
-                <span class="stat-number" data-count="10000" data-duration="2000" data-prefix="">+</span>
-                <span class="stat-label">Movies</span>
+        <div class="counter-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2xl);">
+            <div class="stat-card reveal-up">
+                <div class="stat-icon-wrapper" style="background: rgba(245, 166, 35, 0.1);"><i class="fas fa-film" style="color: var(--color-cinema-gold);"></i></div>
+                <div class="stat-content">
+                    <span class="stat-number" data-count="15000" data-duration="2500" data-prefix="">0</span>
+                    <span class="stat-label">Blockbusters</span>
+                </div>
             </div>
-            <div class="stat-counter-card">
-                <i class="fas fa-list stat-icon" style="color: var(--color-cinema-crimson);"></i>
-                <span class="stat-number" data-count="50" data-duration="2000" data-prefix="">+</span>
-                <span class="stat-label">Genres</span>
+            <div class="stat-card reveal-up" style="transition-delay: 0.1s;">
+                <div class="stat-icon-wrapper" style="background: rgba(229, 9, 20, 0.1);"><i class="fas fa-tv" style="color: var(--color-cinema-crimson);"></i></div>
+                <div class="stat-content">
+                    <span class="stat-number" data-count="48" data-duration="2000" data-prefix="">0</span>
+                    <span class="stat-label">Exclusive Channels</span>
+                </div>
             </div>
-            <div class="stat-counter-card">
-                <i class="fas fa-tv stat-icon" style="color: var(--color-cinema-teal);"></i>
-                <span class="stat-number" data-count="4" data-duration="1500" data-prefix="">K</span>
-                <span class="stat-label">Streaming</span>
+            <div class="stat-card reveal-up" style="transition-delay: 0.2s;">
+                <div class="stat-icon-wrapper" style="background: rgba(8, 145, 178, 0.1);"><i class="fas fa-infinity" style="color: var(--color-cinema-teal);"></i></div>
+                <div class="stat-content">
+                    <span class="stat-number" data-count="4" data-duration="1500" data-prefix="">0</span>
+                    <span class="stat-label">UHD Quality</span>
+                </div>
             </div>
-            <div class="stat-counter-card">
-                <i class="fas fa-ban stat-icon" style="color: var(--color-cinema-violet);"></i>
-                <span class="stat-number" data-count="0" data-duration="1000" data-prefix="">Zero</span>
-                <span class="stat-label">Ads</span>
+            <div class="stat-card reveal-up" style="transition-delay: 0.3s;">
+                <div class="stat-icon-wrapper" style="background: rgba(124, 58, 237, 0.1);"><i class="fas fa-user-shield" style="color: var(--color-cinema-violet);"></i></div>
+                <div class="stat-content">
+                    <span class="stat-number" data-count="100" data-duration="1000" data-prefix="">0</span>
+                    <span class="stat-label">Secure Streaming</span>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Featured Today - Spotlight Card -->
-<section class="section" id="featuredSection">
-    <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-crown" style="color: var(--color-cinema-gold);"></i> Featured Today</h2>
+<!-- Featured Spotlight - Wide Card -->
+<section class="section section-spotlight" id="featuredSection" style="padding-bottom: var(--space-4xl);">
+    <div class="section-header container">
+        <h2 class="section-title reveal-left"><i class="fas fa-star" style="color: var(--color-cinema-gold);"></i> Curated Spotlight</h2>
+        <p class="section-subtitle reveal-left" style="opacity: 0.6; margin-top: 8px;">Hand-picked for your cinematic pleasure</p>
     </div>
-    <div style="padding: 0 var(--space-xl); max-width: var(--container-max); margin: 0 auto;">
-        <div id="spotlightCard"></div>
+    <div class="container reveal-scale" style="margin-top: var(--space-xl);">
+        <div id="spotlightCard" class="spotlight-hero-card"></div>
     </div>
 </section>
 
-<!-- Continue Watching (shown when logged in) -->
-<div id="continueWatchingSection" style="display: none;">
-    <section class="section">
-        <div class="section-header">
-            <h2 class="section-title"><i class="fas fa-play-circle" style="color: var(--color-cinema-violet);"></i> Continue Watching</h2>
+<!-- Trending Carousels -->
+<section class="section" id="trendingSection" style="background: var(--theme-surface);">
+    <div class="section-header container">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+            <div>
+                <h2 class="section-title reveal-left"><i class="fas fa-fire" style="color: var(--color-cinema-crimson);"></i> Trending Now</h2>
+                <p class="section-subtitle reveal-left" style="opacity: 0.6; margin-top: 8px;">What the world is watching right now</p>
+            </div>
+            <a href="/browse/?sort=-trending_score" class="btn btn-ghost btn-sm reveal-right">View All <i class="fas fa-arrow-right"></i></a>
         </div>
+    </div>
+    <div class="carousel-outer-wrapper reveal-up" style="margin-top: var(--space-xl);">
         <div class="carousel-container">
-            <button class="carousel-btn left" onclick="scrollCarousel('continueCarousel', -1)"><i class="fas fa-chevron-left"></i></button>
-            <div class="carousel stagger-children" id="continueCarousel"></div>
-            <button class="carousel-btn right" onclick="scrollCarousel('continueCarousel', 1)"><i class="fas fa-chevron-right"></i></button>
+            <button class="carousel-nav-btn prev" onclick="scrollCarousel('trendingCarousel', -1)"><i class="fas fa-chevron-left"></i></button>
+            <div class="carousel movie-grid-row stagger-reveal" id="trendingCarousel"></div>
+            <button class="carousel-nav-btn next" onclick="scrollCarousel('trendingCarousel', 1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+</section>
+
+<!-- Continue Watching -->
+<div id="continueWatchingSection" style="display: none;">
+    <section class="section" style="padding-top: var(--space-4xl);">
+        <div class="section-header container">
+            <h2 class="section-title reveal-left"><i class="fas fa-play-circle" style="color: var(--color-cinema-violet);"></i> Pick Up Where You Left Off</h2>
+        </div>
+        <div class="carousel-outer-wrapper reveal-up" style="margin-top: var(--space-xl);">
+            <div class="carousel-container">
+                <button class="carousel-nav-btn prev" onclick="scrollCarousel('continueCarousel', -1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel movie-grid-row" id="continueCarousel"></div>
+                <button class="carousel-nav-btn next" onclick="scrollCarousel('continueCarousel', 1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
         </div>
     </section>
 </div>
 
-<!-- Trending Now -->
-<section class="section" id="trendingSection">
-    <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-fire" style="color: var(--color-cinema-crimson);"></i> Trending Now</h2>
-        <a href="/browse/?sort=-trending_score" class="section-link">See All <i class="fas fa-chevron-right"></i></a>
-    </div>
-    <div class="carousel-container">
-        <button class="carousel-btn left" onclick="scrollCarousel('trendingCarousel', -1)"><i class="fas fa-chevron-left"></i></button>
-        <div class="carousel stagger-children" id="trendingCarousel"></div>
-        <button class="carousel-btn right" onclick="scrollCarousel('trendingCarousel', 1)"><i class="fas fa-chevron-right"></i></button>
-    </div>
-</section>
-
-<!-- Why Flick? -->
-<section class="section" style="background: var(--theme-surface);">
-    <div style="max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl); text-align: center;">
-        <h2 class="section-title" style="justify-content: center; font-size: var(--font-size-3xl); margin-bottom: var(--space-2xl);">
-            <span style="background: var(--gradient-cinema); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Why Flick?</span>
-        </h2>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-xl);">
-            <div class="glass-card-premium" style="padding: var(--space-2xl); text-align: center; cursor: default;">
-                <i class="fas fa-desktop" style="font-size: 3rem; color: var(--color-cinema-teal); margin-bottom: var(--space-lg);"></i>
-                <h3 style="font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--space-sm);">Any Device</h3>
-                <p style="color: var(--theme-text-secondary); font-size: var(--font-size-sm);">Watch on your TV, laptop, tablet, or phone. Stream anywhere, anytime.</p>
-            </div>
-            <div class="glass-card-premium" style="padding: var(--space-2xl); text-align: center; cursor: default;">
-                <i class="fas fa-bolt" style="font-size: 3rem; color: var(--color-cinema-gold); margin-bottom: var(--space-lg);"></i>
-                <h3 style="font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--space-sm);">Instant Streaming</h3>
-                <p style="color: var(--theme-text-secondary); font-size: var(--font-size-sm);">No downloads, no waiting. Press play and start watching immediately.</p>
-            </div>
-            <div class="glass-card-premium" style="padding: var(--space-2xl); text-align: center; cursor: default;">
-                <i class="fas fa-star" style="font-size: 3rem; color: var(--color-cinema-violet); margin-bottom: var(--space-lg);"></i>
-                <h3 style="font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--space-sm);">Curated Quality</h3>
-                <p style="color: var(--theme-text-secondary); font-size: var(--font-size-sm);">Hand-picked selections by experts. Discover the best in cinema.</p>
+<!-- Genre Exploration - Orbital Ring -->
+<section class="orbital-section" id="orbitalSection" style="display: none; background: radial-gradient(circle at center, rgba(124, 58, 237, 0.05) 0%, transparent 70%);">
+    <div class="container" style="text-align: center;">
+        <h2 class="orbital-section-title reveal-up">Discover by Genre</h2>
+        <p class="orbital-section-subtitle reveal-up">Explore our vast library through an interactive experience</p>
+        
+        <div class="orbital-ring-container reveal-scale" id="orbitalRingContainer" style="margin-top: var(--space-2xl);">
+            <div class="orbital-ring"></div>
+            <div class="orbital-ring-inner"></div>
+            <div class="orbital-center-logo">
+                <img src="/static/img/Logo/logo.svg" alt="Flick" style="width: 60px;">
             </div>
         </div>
     </div>
-</section>
-
-<!-- Genres Showcase -->
-<section class="section" style="padding: var(--space-3xl) 0;">
-    <div style="max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-xl);">
-        <h2 class="section-title" style="margin-bottom: var(--space-xl);">Browse by Genre</h2>
-        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap; justify-content: center;">
-            <span class="mood-pill" data-mood="intense" onclick="navigateTo('/genre/action/')">🎬 Action</span>
-            <span class="mood-pill" data-mood="feelgood" onclick="navigateTo('/genre/comedy/')">😄 Comedy</span>
-            <span class="mood-pill" data-mood="dark" onclick="navigateTo('/genre/horror/')">👻 Horror</span>
-            <span class="mood-pill" data-mood="mindblowing" onclick="navigateTo('/genre/sci-fi/')">🚀 Sci-Fi</span>
-            <span class="mood-pill" data-mood="romantic" onclick="navigateTo('/genre/romance/')">💕 Romance</span>
-            <span class="mood-pill" data-mood="brainteaser" onclick="navigateTo('/genre/mystery/')">🔍 Mystery</span>
-            <span class="mood-pill" data-mood="chill" onclick="navigateTo('/genre/drama/')">🎭 Drama</span>
-            <span class="mood-pill" data-mood="mindblowing" onclick="navigateTo('/genre/fantasy/')">🧙 Fantasy</span>
+    
+    <div class="orbital-expanded-content" id="orbitalExpanded">
+        <div class="container">
+            <div class="genre-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl);">
+                <h3 id="orbitalCenterText" style="font-size: var(--font-size-2xl);">Select a Genre</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeOrbital()">Close <i class="fas fa-times"></i></button>
+            </div>
+            <div class="movie-grid reveal-up" id="orbitalMovies"></div>
         </div>
     </div>
 </section>
 
-<!-- Orbital Genre Ring Navigation -->
-<section class="orbital-section" id="orbitalSection" style="display: none;">
-    <h2 class="orbital-section-title">Explore Genres</h2>
-    <p class="orbital-section-subtitle">Click a genre orb to discover movies</p>
-    <div class="orbital-ring-container" id="orbitalRingContainer">
-        <div class="orbital-ring"></div>
-        <div class="orbital-ring-inner"></div>
-        <div class="orbital-center">
-            <span id="orbitalCenterText"><img src="/static/img/Logo/logo.svg" style="width:48px; border-radius:12px; box-shadow:0 0 15px rgba(255,255,255,0.2);"></span>
+<!-- Why Choose Flick? - Feature Cards -->
+<section class="section features-grid-section" style="padding: var(--space-4xl) 0; background: #000;">
+    <div class="container">
+        <div class="features-header" style="text-align: center; margin-bottom: var(--space-3xl);">
+            <h2 class="section-title reveal-up" style="justify-content: center; font-size: var(--font-size-3xl);">The Flick Experience</h2>
+            <p class="reveal-up" style="color: var(--theme-text-secondary); max-width: 600px; margin: var(--space-sm) auto 0;">Beyond just streaming, we provide a premium cinematic journey.</p>
         </div>
-    </div>
-    <div class="orbital-expanded" id="orbitalExpanded">
-        <div class="movie-grid stagger-children" id="orbitalMovies"></div>
+        
+        <div class="features-grid">
+            <div class="feature-card reveal-up">
+                <div class="feature-icon" style="color: var(--color-cinema-teal);"><i class="fas fa-rocket"></i></div>
+                <h3>Ultra Fast</h3>
+                <p>Advanced encoding for instant playback even on slow connections.</p>
+            </div>
+            <div class="feature-card reveal-up" style="transition-delay: 0.1s;">
+                <div class="feature-icon" style="color: var(--color-cinema-gold);"><i class="fas fa-shield-halved"></i></div>
+                <h3>Privacy First</h3>
+                <p>No tracking, no data selling. Your viewing habits are yours alone.</p>
+            </div>
+            <div class="feature-card reveal-up" style="transition-delay: 0.2s;">
+                <div class="feature-icon" style="color: var(--color-cinema-violet);"><i class="fas fa-wand-magic-sparkles"></i></div>
+                <h3>AI Recommendations</h3>
+                <p>Smart discovery that actually understands your taste in cinema.</p>
+            </div>
+        </div>
     </div>
 </section>
 
-<!-- Content Sections (Additional carousels) -->
-<div id="contentSections">
-    <section class="section">
-        <div class="section-header">
-            <div class="skeleton skeleton-text" style="width:180px;height:28px;"></div>
-        </div>
-        <div class="carousel" style="padding:0 var(--space-xl);">
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-        </div>
-    </section>
-</div>
+<!-- Additional Dynamic Content -->
+<div id="contentSections" class="reveal-up"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Additional home-specific logic
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const data = await API.catalog.homepage();
+            renderHomepage(data);
+            
+            // Re-init GSAP for dynamically added content
+            if (window.ScrollAnims) {
+                window.ScrollAnims.refresh();
+            }
+        } catch (e) {
+            console.error('Failed to load homepage:', e);
+        }
+    });
+
+    function renderHomepage(data) {
+        // Hero setup
+        if (data.featured && data.featured.length > 0) {
+            const movie = data.featured[0];
+            const backdrop = document.getElementById('heroBackdrop');
+            if (backdrop) {
+                backdrop.style.backgroundImage = `url('${movie.backdrop_display || movie.poster_display}')`;
+            }
+        }
+
+        // Spotlight setup
+        const spotlightContainer = document.getElementById('spotlightCard');
+        if (spotlightContainer && data.featured && data.featured.length > 0) {
+            spotlightContainer.innerHTML = buildMovieCard(data.featured[0], 'wide', { 
+                showDescription: true, 
+                showBadges: true,
+                showActions: true 
+            });
+        }
+
+        // Trending carousel
+        const trendingContainer = document.getElementById('trendingCarousel');
+        if (trendingContainer && data.trending) {
+            trendingContainer.innerHTML = data.trending.slice(0, 12).map(m => buildMovieCard(m, 'standard', { showBadges: true })).join('');
+        }
+
+        // User specific content
+        if (currentUser) {
+            loadContinueWatching();
+        }
+
+        // Genres
+        if (data.genres_with_movies) {
+            renderOrbitalRing(data.genres_with_movies);
+        }
+
+        // Additional Sections
+        const dynamicContainer = document.getElementById('contentSections');
+        let html = '';
+        
+        if (data.new_releases && data.new_releases.length) {
+            html += createCarousel('newReleasesCarousel', 'New Releases', data.new_releases, false, '/browse/?sort=-created_at');
+        }
+        
+        if (data.top_rated && data.top_rated.length) {
+            html += createCarousel('topRatedCarousel', 'Critics Choice', data.top_rated, false, '/browse/?sort=-rating');
+        }
+
+        dynamicContainer.innerHTML = html;
+        
+        // Refresh triggers after adding content
+        setTimeout(() => {
+            if (window.ScrollAnims) window.ScrollAnims.refresh();
+        }, 100);
+    }
+
+    async function loadContinueWatching() {
+        try {
+            const history = await API.auth.continueWatching();
+            if (history && history.length > 0) {
+                const carousel = document.getElementById('continueCarousel');
+                const movies = history.map(h => ({
+                    id: h.movie_id,
+                    title: h.movie_title,
+                    poster_display: h.movie_poster,
+                    progress: h.progress
+                }));
+                carousel.innerHTML = movies.map(m => buildMovieCard(m, 'compact', { showProgress: true, progressPercent: m.progress })).join('');
+                document.getElementById('continueWatchingSection').style.display = 'block';
+            }
+        } catch {}
+    }
+
+    function closeOrbital() {
+        document.getElementById('orbitalExpanded').classList.remove('active');
+        document.querySelector('.orbital-ring-container').style.display = 'flex';
+    }
+    
+    // Override selectOrbitalGenre from original template for better animation
+    function selectOrbitalGenre(gm) {
+        document.getElementById('orbitalCenterText').textContent = gm.genre.name;
+        const expanded = document.getElementById('orbitalExpanded');
+        const grid = document.getElementById('orbitalMovies');
+        const ring = document.querySelector('.orbital-ring-container');
+        
+        ring.style.display = 'none';
+        expanded.classList.add('active');
+        grid.innerHTML = gm.movies.map(m => buildMovieCard(m, 'standard')).join('');
+        
+        gsap.from(grid.children, {
+            y: 30,
+            opacity: 0,
+            duration: 0.6,
+            stagger: 0.05,
+            ease: "power2.out"
+        });
+    }
+</script>
+
+<style>
+    /* Home-specific premium styles */
+    .text-reveal-gradient {
+        background: var(--gradient-cinema);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+    
+    .scroll-mouse {
+        width: 24px;
+        height: 40px;
+        border: 2px solid var(--theme-text-muted);
+        border-radius: 12px;
+        position: relative;
+    }
+    
+    .scroll-wheel {
+        width: 4px;
+        height: 8px;
+        background: var(--theme-primary);
+        border-radius: 2px;
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        animation: mouseScroll 2s infinite;
+    }
+    
+    @keyframes mouseScroll {
+        0% { transform: translate(-50%, 0); opacity: 1; }
+        100% { transform: translate(-50%, 20px); opacity: 0; }
+    }
+    
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        padding: var(--space-lg);
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: var(--radius-xl);
+    }
+    
+    .stat-icon-wrapper {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .stat-number {
+        display: block;
+        font-size: var(--font-size-2xl);
+        font-weight: 800;
+        line-height: 1;
+        color: #fff;
+    }
+    
+    .stat-label {
+        font-size: var(--font-size-xs);
+        color: var(--theme-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .feature-card {
+        padding: var(--space-2xl);
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: var(--radius-2xl);
+        text-align: center;
+        transition: var(--transition-medium);
+    }
+    
+    .feature-card:hover {
+        background: rgba(255,255,255,0.04);
+        border-color: rgba(255,255,255,0.1);
+        transform: translateY(-10px);
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: var(--space-lg);
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-xl);
+    }
+    
+    @media (max-width: 768px) {
+        .counter-grid, .features-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .counter-grid, .features-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}

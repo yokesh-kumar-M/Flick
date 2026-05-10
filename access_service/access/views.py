@@ -11,15 +11,23 @@ from .serializers import (
     AccessRequestSerializer, AccessRequestCreateSerializer,
     AccessGrantSerializer, VerifyCodeSerializer
 )
-import sys, os, requests, logging
+import sys, os, requests, logging, hmac
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from shared.jwt_utils import decode_token, generate_access_code
 
 logger = logging.getLogger(__name__)
 
 
+def _auth_api_url():
+    base_url = os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001')
+    base_url = base_url.rstrip('/')
+    if not base_url.endswith('/api/auth'):
+        base_url = f'{base_url}/api/auth'
+    return base_url
+
+
 # Auth service URL for user lookups
-AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001/api/auth')
+AUTH_SERVICE_URL = _auth_api_url()
 
 
 def get_raw_token(request):
@@ -255,7 +263,7 @@ def approve_access(request, pk):
 
 Your Unlock Hash: {code}
 
-Please enter this Hash on the movie page to unlock it forever.','''
+Please enter this Hash on the movie page to unlock it forever.''',
             'access_approved',
             f'/movie/{access_req.movie_id}/',
         )
@@ -391,7 +399,14 @@ def all_requests(request):
 @permission_classes([AllowAny])  # Webhook from payment provider
 def payment_webhook(request):
     """Webhook endpoint for payment confirmations (Stripe/PayPal/etc)."""
-    # In production, verify webhook signature here
+    webhook_secret = os.environ.get('PAYMENT_WEBHOOK_SECRET', '')
+    provided_secret = request.headers.get('X-Webhook-Secret', '')
+    if webhook_secret:
+        if not provided_secret or not hmac.compare_digest(provided_secret, webhook_secret):
+            return Response({'error': 'Invalid webhook signature'}, status=status.HTTP_403_FORBIDDEN)
+    elif not settings.DEBUG:
+        return Response({'error': 'PAYMENT_WEBHOOK_SECRET is required'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
     payment_id = request.data.get('payment_id')
     request_id = request.data.get('request_id')
     status_received = request.data.get('status', 'completed')

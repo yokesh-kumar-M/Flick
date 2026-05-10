@@ -3,7 +3,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import FileResponse
+from django.conf import settings
 from django.utils import timezone
+from django.utils._os import safe_join
 from datetime import timedelta
 from .models import TranscodeJob, StreamSession
 from .serializers import TranscodeJobSerializer, StreamSessionSerializer, StartStreamSerializer
@@ -11,7 +13,7 @@ import uuid, os, sys
 import requests
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from shared.jwt_utils import decode_token, generate_signed_url
+from shared.jwt_utils import decode_token, generate_signed_url, verify_signed_url
 from shared.events import event_bus
 
 
@@ -28,6 +30,36 @@ def get_hls_content_type(filename):
     if filename.endswith('.ts'):
         return 'video/MP2T'
     return 'application/octet-stream'
+
+
+def _signed_hls_allowed(request):
+    if settings.DEBUG and os.environ.get('REQUIRE_SIGNED_HLS_URLS', 'False') != 'True':
+        return True
+
+    expires = request.GET.get('expires')
+    signature = request.GET.get('signature')
+    if not expires or not signature:
+        return False
+    try:
+        return verify_signed_url(request.path, expires, signature)
+    except (TypeError, ValueError):
+        return False
+
+
+def _hls_file_response(request, *parts):
+    if not _signed_hls_allowed(request):
+        return Response({'error': 'Invalid or expired signed URL'}, status=status.HTTP_403_FORBIDDEN)
+
+    media_root = os.path.join(os.path.dirname(__file__), '..', 'media', 'hls')
+    try:
+        file_path = safe_join(media_root, *[str(part) for part in parts])
+    except ValueError:
+        return Response({'error': 'Invalid file path'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not os.path.isfile(file_path):
+        return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    return FileResponse(open(file_path, 'rb'), content_type=get_hls_content_type(parts[-1]))
 
 
 @api_view(['POST'])
@@ -103,26 +135,14 @@ def start_stream(request):
 @permission_classes([AllowAny])
 def serve_hls(request, movie_id, filename):
     """Serve HLS playlist or segment files."""
-    media_root = os.path.join(os.path.dirname(__file__), '..', 'media')
-    file_path = os.path.join(media_root, 'hls', str(movie_id), filename)
-
-    if not os.path.exists(file_path):
-        return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    return FileResponse(open(file_path, 'rb'), content_type=get_hls_content_type(filename))
+    return _hls_file_response(request, movie_id, filename)
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def serve_hls_quality(request, movie_id, quality, filename):
     """Serve HLS files from quality subdirectories."""
-    media_root = os.path.join(os.path.dirname(__file__), '..', 'media')
-    file_path = os.path.join(media_root, 'hls', str(movie_id), quality, filename)
-
-    if not os.path.exists(file_path):
-        return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    return FileResponse(open(file_path, 'rb'), content_type=get_hls_content_type(filename))
+    return _hls_file_response(request, movie_id, quality, filename)
 
 
 @api_view(['POST'])

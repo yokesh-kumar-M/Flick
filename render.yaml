@@ -42,6 +42,8 @@ services:
         value: "1"
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: SERVICE_AUTH_TOKEN
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
@@ -70,6 +72,8 @@ services:
         value: "1"
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: SERVICE_AUTH_TOKEN
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
@@ -98,6 +102,10 @@ services:
         value: "1"
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: SERVICE_AUTH_TOKEN
+        sync: false
+      - key: PAYMENT_WEBHOOK_SECRET
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
@@ -136,6 +144,8 @@ services:
         value: "1"
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: SERVICE_AUTH_TOKEN
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
@@ -174,6 +184,8 @@ services:
         value: "1"
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: SERVICE_AUTH_TOKEN
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
@@ -202,6 +214,8 @@ services:
         value: "1"
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: SERVICE_AUTH_TOKEN
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY

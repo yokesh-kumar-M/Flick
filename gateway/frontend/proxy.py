@@ -68,8 +68,6 @@ async def _make_request(method, url, headers, cookies, **kwargs):
                     files=kwargs.get('files')
                 )
                 resp = await client.send(req)
-                resp.raise_for_status() # Raise on 4XX/5XX errors if we want circuit breaker to trigger. But proxy shouldn't trip cb on 4xx.
-                # Wait, proxy shouldn't trip on 400 Bad Request, only on 5XX or connection errors.
                 if resp.status_code >= 500:
                     raise httpx.HTTPStatusError(f"Server error: {resp.status_code}", request=req, response=resp)
                 return resp

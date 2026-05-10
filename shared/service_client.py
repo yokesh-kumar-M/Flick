@@ -4,8 +4,13 @@ Shared service communication client for Flick microservices.
 import requests
 import os
 import logging
+from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
+DEFAULT_TIMEOUT = float(os.environ.get('SERVICE_REQUEST_TIMEOUT', '3'))
+DEFAULT_RETRIES = int(os.environ.get('SERVICE_REQUEST_RETRIES', '0'))
+NOTIFICATION_TIMEOUT = float(os.environ.get('NOTIFICATION_REQUEST_TIMEOUT', '1'))
+SERVICE_AUTH_TOKEN = os.environ.get('SERVICE_AUTH_TOKEN', '')
 
 # Service registry
 def _ensure_http(url):
@@ -29,12 +34,13 @@ def get_session(service_name):
     """Get or create a requests session for connection pooling."""
     if service_name not in _sessions:
         session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(
+        adapter = HTTPAdapter(
             pool_connections=10,
             pool_maxsize=20,
-            max_retries=3
+            max_retries=DEFAULT_RETRIES,
         )
         session.mount('http://', adapter)
+        session.mount('https://', adapter)
         _sessions[service_name] = session
     return _sessions[service_name]
 
@@ -47,7 +53,7 @@ def service_request(service_name, method, path, **kwargs):
 
     url = f"{base_url}{path}"
     session = get_session(service_name)
-    timeout = kwargs.pop('timeout', 10)
+    timeout = kwargs.pop('timeout', DEFAULT_TIMEOUT)
 
     try:
         response = session.request(method, url, timeout=timeout, **kwargs)
@@ -63,6 +69,7 @@ def service_request(service_name, method, path, **kwargs):
 def send_notification(user_id, title, message, notification_type='info', link=''):
     """Send a notification to a user via the notification service."""
     try:
+        headers = {'X-Service-Token': SERVICE_AUTH_TOKEN} if SERVICE_AUTH_TOKEN else {}
         response = service_request(
             'notification', 'POST',
             '/api/notifications/create/',
@@ -73,7 +80,8 @@ def send_notification(user_id, title, message, notification_type='info', link=''
                 'notification_type': notification_type,
                 'link': link,
             },
-            timeout=5,
+            headers=headers,
+            timeout=NOTIFICATION_TIMEOUT,
         )
         if response and response.status_code == 201:
             return True

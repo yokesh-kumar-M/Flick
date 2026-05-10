@@ -47,7 +47,9 @@ services:
           memory: 512M
 
   gateway:
-    build: ./gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     ports:
       - "8000:8000"
     env_file: .env
@@ -55,8 +57,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./gateway:/app
-      - media_data:/app/media
+      - ./gateway:/app/gateway
+      - ./shared:/app/shared
+      - media_data:/app/gateway/media
     depends_on:
       redis:
         condition: service_healthy
@@ -78,7 +81,9 @@ services:
           memory: 512M
 
   auth_service:
-    build: ./auth_service
+    build:
+      context: .
+      dockerfile: auth_service/Dockerfile
     ports:
       - "8001:8001"
     env_file: .env
@@ -86,7 +91,8 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./auth_service:/app
+      - ./auth_service:/app/auth_service
+      - ./shared:/app/shared
     depends_on:
       redis:
         condition: service_healthy
@@ -108,7 +114,9 @@ services:
           memory: 512M
 
   catalog_service:
-    build: ./catalog_service
+    build:
+      context: .
+      dockerfile: catalog_service/Dockerfile
     ports:
       - "8002:8002"
     env_file: .env
@@ -116,8 +124,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./catalog_service:/app
-      - media_data:/app/media
+      - ./catalog_service:/app/catalog_service
+      - ./shared:/app/shared
+      - media_data:/app/catalog_service/media
     depends_on:
       redis:
         condition: service_healthy
@@ -139,7 +148,9 @@ services:
           memory: 512M
 
   access_service:
-    build: ./access_service
+    build:
+      context: .
+      dockerfile: access_service/Dockerfile
     ports:
       - "8003:8003"
     env_file: .env
@@ -147,7 +158,8 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./access_service:/app
+      - ./access_service:/app/access_service
+      - ./shared:/app/shared
     depends_on:
       redis:
         condition: service_healthy
@@ -169,7 +181,9 @@ services:
           memory: 512M
 
   streaming_service:
-    build: ./streaming_service
+    build:
+      context: .
+      dockerfile: streaming_service/Dockerfile
     ports:
       - "8004:8004"
     env_file: .env
@@ -177,8 +191,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./streaming_service:/app
-      - media_data:/app/media
+      - ./streaming_service:/app/streaming_service
+      - ./shared:/app/shared
+      - media_data:/app/streaming_service/media
     depends_on:
       redis:
         condition: service_healthy
@@ -200,7 +215,9 @@ services:
           memory: 512M
 
   recommendation_service:
-    build: ./recommendation_service
+    build:
+      context: .
+      dockerfile: recommendation_service/Dockerfile
     ports:
       - "8005:8005"
     env_file: .env
@@ -208,7 +225,8 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./recommendation_service:/app
+      - ./recommendation_service:/app/recommendation_service
+      - ./shared:/app/shared
     depends_on:
       redis:
         condition: service_healthy
@@ -230,7 +248,9 @@ services:
           memory: 512M
 
   notification_service:
-    build: ./notification_service
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile
     ports:
       - "8006:8006"
     env_file: .env
@@ -238,7 +258,8 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./notification_service:/app
+      - ./notification_service:/app/notification_service
+      - ./shared:/app/shared
     depends_on:
       redis:
         condition: service_healthy
@@ -260,14 +281,17 @@ services:
           memory: 512M
 
   celery_recommendation:
-    build: ./recommendation_service
+    build:
+      context: .
+      dockerfile: recommendation_service/Dockerfile
     command: celery -A recommendation_project worker -l info -B
     env_file: .env
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./recommendation_service:/app
+      - ./recommendation_service:/app/recommendation_service
+      - ./shared:/app/shared
     depends_on:
       redis:
         condition: service_healthy
@@ -286,15 +310,18 @@ services:
           memory: 512M
 
   celery_streaming:
-    build: ./streaming_service
+    build:
+      context: .
+      dockerfile: streaming_service/Dockerfile
     command: celery -A streaming_project worker -l info
     env_file: .env
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./streaming_service:/app
-      - media_data:/app/media
+      - ./streaming_service:/app/streaming_service
+      - ./shared:/app/shared
+      - media_data:/app/streaming_service/media
     depends_on:
       redis:
         condition: service_healthy

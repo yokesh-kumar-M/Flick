@@ -2,6 +2,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from django.conf import settings
+import hmac
 from .models import Notification
 from .serializers import NotificationSerializer, CreateNotificationSerializer
 import sys, os
@@ -64,6 +66,14 @@ def mark_all_read(request):
 @permission_classes([AllowAny])
 def create_notification(request):
     """Internal: Create a notification (called by other services)."""
+    service_token = os.environ.get('SERVICE_AUTH_TOKEN', '')
+    provided_token = request.headers.get('X-Service-Token', '')
+    if service_token:
+        if not provided_token or not hmac.compare_digest(provided_token, service_token):
+            return Response({'error': 'Invalid service token'}, status=status.HTTP_403_FORBIDDEN)
+    elif not settings.DEBUG:
+        return Response({'error': 'SERVICE_AUTH_TOKEN is required'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
     serializer = CreateNotificationSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

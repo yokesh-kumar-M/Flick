@@ -16,5 +16,5 @@ RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
 EXPOSE 8002
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py seed_catalog && gunicorn --bind 0.0.0.0:${PORT:-8000} catalog_project.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py seed_catalog && gunicorn --bind 0.0.0.0:${PORT:-8002} catalog_project.wsgi:application"]
 

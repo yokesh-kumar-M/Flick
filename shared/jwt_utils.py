@@ -7,12 +7,24 @@ import os
 import hashlib
 import hmac
 
-JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'flick-jwt-secret-key-2026')
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+
+def _required_secret(name, dev_default):
+    value = os.environ.get(name, '')
+    if value:
+        return value
+    if DEBUG:
+        return dev_default
+    raise RuntimeError(f'{name} must be set when DEBUG=False')
+
+
+JWT_SECRET = _required_secret('JWT_SECRET_KEY', 'flick-jwt-secret-key-2026')
 JWT_ALGORITHM = os.environ.get('JWT_ALGORITHM', 'HS256')
 ACCESS_TOKEN_LIFETIME = int(os.environ.get('JWT_ACCESS_TOKEN_LIFETIME', 30))  # minutes
 REFRESH_TOKEN_LIFETIME = int(os.environ.get('JWT_REFRESH_TOKEN_LIFETIME', 1440))  # minutes
-HMAC_SECRET = os.environ.get('HMAC_SECRET', 'flick-hmac-secret-2026')
-ACCESS_CODE_SECRET = os.environ.get('ACCESS_CODE_SECRET', 'flick-access-code-secret-2026')
+HMAC_SECRET = _required_secret('HMAC_SECRET', 'flick-hmac-secret-2026')
+ACCESS_CODE_SECRET = _required_secret('ACCESS_CODE_SECRET', 'flick-access-code-secret-2026')
 
 
 def create_access_token(user_id, username, is_admin=False, has_super_access=False):

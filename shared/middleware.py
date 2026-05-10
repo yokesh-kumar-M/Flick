@@ -19,16 +19,6 @@ class RequestTimingMiddleware:
         return response
 
 
-class HealthCheckBypassMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        if request.path.startswith('/health/'):
-            return self.get_response(request)
-        return self.get_response(request)
-
-
 class ServiceCorrelationMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

@@ -1,19 +1,23 @@
 import os
-from elasticsearch import Elasticsearch
-from django.conf import settings
+try:
+    from elasticsearch import Elasticsearch
+except ImportError:
+    Elasticsearch = None
 
-# Initialize Elasticsearch client
 es_url = os.environ.get('ELASTICSEARCH_URL', 'http://elasticsearch:9200')
 if 'localhost' in es_url and not os.path.exists('/.dockerenv'):
-    pass # use localhost
+    pass  # use localhost
 elif 'localhost' in es_url:
     es_url = es_url.replace('localhost', 'elasticsearch')
 
-es_client = Elasticsearch(es_url)
+es_client = Elasticsearch(es_url) if Elasticsearch else None
 INDEX_NAME = 'movies'
 
 def sync_movie_to_es(movie):
     """Sync a Django Movie model to Elasticsearch."""
+    if es_client is None:
+        return
+
     try:
         doc = {
             'id': movie.id,
@@ -34,6 +38,9 @@ def sync_movie_to_es(movie):
 
 def search_movies_es(query, size=30):
     """Perform fuzzy search using Elasticsearch."""
+    if es_client is None:
+        return None
+
     try:
         if not es_client.indices.exists(index=INDEX_NAME):
             return None

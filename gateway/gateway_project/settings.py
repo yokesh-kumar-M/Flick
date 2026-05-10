@@ -7,15 +7,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 _secret = os.environ.get('SECRET_KEY', '')
-if not _secret:
+if not _secret and DEBUG:
     _secret = 'gateway-service-dev-secret-key-NOT-FOR-PRODUCTION'
+elif not _secret:
+    raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG=False')
 SECRET_KEY = _secret
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
+if DEBUG and os.environ.get('DJANGO_ALLOW_ALL_HOSTS', 'False') == 'True':
+    ALLOWED_HOSTS.append('*')
 ALLOWED_HOSTS.append('.vercel.app')
 env_render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if env_render_host:
     ALLOWED_HOSTS.append(env_render_host)
-ALLOWED_HOSTS.append('*')
 
 CACHES = {
     'default': {
@@ -221,7 +224,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True') == 'True'
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
