@@ -6,9 +6,14 @@ import time
 import os
 import hashlib
 import hmac
+import logging
 
+from .events import get_redis_client
+
+logger = logging.getLogger(__name__)
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
+redis_client = get_redis_client()
 
 def _required_secret(name, dev_default):
     value = os.environ.get(name, '')
@@ -51,10 +56,7 @@ def create_refresh_token(user_id):
 
 
 
-# ── Token Blacklist (in-process; survives only while server is running) ──────
-# For production, replace with a Redis-backed store.
-_blacklisted_tokens: dict[str, int] = {}   # jti_key → expiry timestamp
-
+# ── Token Blacklist (Redis-backed) ──────
 
 def _make_jti(payload: dict) -> str:
     """Derive a unique key from the token payload (iat + user_id + type)."""
@@ -63,38 +65,45 @@ def _make_jti(payload: dict) -> str:
 
 def blacklist_token(token: str) -> bool:
     """
-    Invalidate a JWT immediately (e.g. on logout).
+    Invalidate a JWT immediately (e.g. on logout) using Redis SETEX.
     Returns True if successfully blacklisted, False if token was already invalid.
     """
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        jti = _make_jti(payload)
-        _blacklisted_tokens[jti] = payload['exp']
-        _purge_expired_blacklist()
-        return True
     except jwt.InvalidTokenError:
         return False
 
+    exp = payload.get('exp')
+    if not exp:
+        return False
 
-def _purge_expired_blacklist():
-    """Remove expired entries from the blacklist to prevent memory growth."""
-    now = int(time.time())
-    expired_keys = [k for k, exp in _blacklisted_tokens.items() if exp < now]
-    for k in expired_keys:
-        del _blacklisted_tokens[k]
+    ttl = exp - int(time.time())
+    if ttl > 0:
+        try:
+            redis_client.setex(f"blacklist:{_make_jti(payload)}", ttl, "1")
+        except Exception as e:
+            # If Redis is unavailable we can't enforce a blacklist, but the
+            # token will still expire naturally at `exp`.
+            logger.warning(f"blacklist_token: Redis unavailable, token not blacklisted: {e}")
+            return False
+    return True
 
 
 def decode_token(token):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        # Reject tokens that have been explicitly blacklisted (e.g. logged out)
-        if _make_jti(payload) in _blacklisted_tokens:
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None
+
+    # Reject tokens that have been explicitly blacklisted. If Redis is down,
+    # fail open so a cache outage doesn't take down authentication entirely
+    # (tokens still expire at `exp`).
+    try:
+        if redis_client.exists(f"blacklist:{_make_jti(payload)}"):
             return None
-        return payload
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
-        return None
+    except Exception as e:
+        logger.warning(f"decode_token: blacklist check skipped, Redis unavailable: {e}")
+    return payload
 
 
 

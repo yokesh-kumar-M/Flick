@@ -2,6 +2,7 @@ from celery import shared_task
 import json
 import logging
 import os
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -14,24 +15,19 @@ def recalculate_all_recommendations():
 
     logger.info("Starting recommendation recalculation...")
 
-    # Get all movies
-    movies = list(MovieFeature.objects.all().values(
+    # 1. Load movies efficiently
+    movie_qs = MovieFeature.objects.all().values(
         'movie_id', 'title', 'genres', 'tags', 'director', 'year', 'rating',
         'view_count', 'trending_score'
-    ))
-
-    # Parse JSON fields
-    for m in movies:
+    )
+    
+    movies = []
+    movie_map = {} # For faster lookup
+    for m in movie_qs.iterator(chunk_size=1000):
         m['genres'] = json.loads(m['genres']) if m['genres'] else []
         m['tags'] = json.loads(m['tags']) if m['tags'] else []
-
-    # Get all interactions
-    interactions = list(UserInteraction.objects.all().values(
-        'user_id', 'movie_id', 'score'
-    ))
-
-    # Get unique users
-    user_ids = set(i['user_id'] for i in interactions)
+        movies.append(m)
+        movie_map[m['movie_id']] = m
 
     # Calculate trending for all
     trending = engine.get_trending(movies)
@@ -45,43 +41,78 @@ def recalculate_all_recommendations():
         defaults={'movie_ids': trending_ids, 'scores': trending_scores}
     )
 
-    # Per-user recommendations
-    for user_id in user_ids:
-        try:
-            user_interactions = [i for i in interactions if i['user_id'] == user_id]
-            user_movie_ids = [i['movie_id'] for i in user_interactions]
+    # 2. Load interactions and build user-item matrix ONCE
+    # Using values_list for memory efficiency
+    interactions_qs = UserInteraction.objects.all().values_list('user_id', 'movie_id', 'score')
+    
+    # Build list of dicts for pandas (could be optimized further but better than before)
+    all_interactions = []
+    interactions_by_user = {}
+    
+    for uid, mid, score in interactions_qs.iterator(chunk_size=5000):
+        item = {'user_id': uid, 'movie_id': mid, 'score': score}
+        all_interactions.append(item)
+        if uid not in interactions_by_user:
+            interactions_by_user[uid] = []
+        interactions_by_user[uid].append(mid) # Just need movie IDs for genre preferences
 
-            # Get user's genre preferences from their watched movies
-            user_genres = []
-            for mid in user_movie_ids:
-                mf = next((m for m in movies if m['movie_id'] == mid), None)
-                if mf:
-                    user_genres.extend(mf['genres'])
+    if not all_interactions:
+        logger.info("No interactions found. Recalculation complete.")
+        return
 
-            # Personalized recommendations
-            personalized = engine.get_personalized(user_id, user_genres, movies, interactions)
-            CachedRecommendation.objects.update_or_create(
-                user_id=user_id,
-                recommendation_type='personalized',
-                defaults={
-                    'movie_ids': json.dumps([r['movie_id'] for r in personalized]),
-                    'scores': json.dumps([r['score'] for r in personalized]),
-                }
-            )
+    # Create the user-item matrix once for all collaborative filtering
+    df = pd.DataFrame(all_interactions)
+    user_item_matrix = df.pivot_table(
+        index='user_id', columns='movie_id', values='score', fill_value=0
+    )
+    
+    # 3. Process users in batches
+    user_ids = list(interactions_by_user.keys())
+    logger.info(f"Processing recommendations for {len(user_ids)} users in batches...")
+    
+    batch_size = 100
+    for i in range(0, len(user_ids), batch_size):
+        batch_users = user_ids[i:i+batch_size]
+        for user_id in batch_users:
+            try:
+                # Get user's watched movie IDs from our pre-grouped dict
+                user_movie_ids = interactions_by_user.get(user_id, [])
 
-            # Collaborative recommendations
-            collab = engine.get_collaborative_recommendations(user_id, interactions)
-            CachedRecommendation.objects.update_or_create(
-                user_id=user_id,
-                recommendation_type='collaborative',
-                defaults={
-                    'movie_ids': json.dumps([r['movie_id'] for r in collab]),
-                    'scores': json.dumps([r['score'] for r in collab]),
-                }
-            )
+                # Get user's genre preferences
+                user_genres = []
+                for mid in user_movie_ids:
+                    mf = movie_map.get(mid)
+                    if mf:
+                        user_genres.extend(mf['genres'])
 
-        except Exception as e:
-            logger.error(f"Error calculating recs for user {user_id}: {e}")
+                # Personalized recommendations (using pre-built matrix)
+                personalized = engine.get_personalized(
+                    user_id, user_genres, movies, user_item=user_item_matrix
+                )
+                CachedRecommendation.objects.update_or_create(
+                    user_id=user_id,
+                    recommendation_type='personalized',
+                    defaults={
+                        'movie_ids': json.dumps([r['movie_id'] for r in personalized]),
+                        'scores': json.dumps([r['score'] for r in personalized]),
+                    }
+                )
+
+                # Collaborative recommendations (using pre-built matrix)
+                collab = engine.get_collaborative_recommendations(
+                    user_id, user_item=user_item_matrix
+                )
+                CachedRecommendation.objects.update_or_create(
+                    user_id=user_id,
+                    recommendation_type='collaborative',
+                    defaults={
+                        'movie_ids': json.dumps([r['movie_id'] for r in collab]),
+                        'scores': json.dumps([r['score'] for r in collab]),
+                    }
+                )
+
+            except Exception as e:
+                logger.error(f"Error calculating recs for user {user_id}: {e}")
 
     # Cache in Redis for fast retrieval
     try:

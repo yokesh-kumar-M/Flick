@@ -6,6 +6,8 @@ import os
 import logging
 from requests.adapters import HTTPAdapter
 
+from .events import event_bus
+
 logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = float(os.environ.get('SERVICE_REQUEST_TIMEOUT', '3'))
 DEFAULT_RETRIES = int(os.environ.get('SERVICE_REQUEST_RETRIES', '0'))
@@ -67,26 +69,16 @@ def service_request(service_name, method, path, **kwargs):
 
 
 def send_notification(user_id, title, message, notification_type='info', link=''):
-    """Send a notification to a user via the notification service."""
+    """Send a notification to a user via the event bus (asynchronous)."""
     try:
-        headers = {'X-Service-Token': SERVICE_AUTH_TOKEN} if SERVICE_AUTH_TOKEN else {}
-        response = service_request(
-            'notification', 'POST',
-            '/api/notifications/create/',
-            json={
-                'user_id': user_id,
-                'title': title,
-                'message': message,
-                'notification_type': notification_type,
-                'link': link,
-            },
-            headers=headers,
-            timeout=NOTIFICATION_TIMEOUT,
-        )
-        if response and response.status_code == 201:
-            return True
-        logger.warning(f"Notification send failed: {response.status_code if response else 'no response'}")
-        return False
+        event_bus.publish('notifications', 'send_notification', {
+            'user_id': user_id,
+            'title': title,
+            'message': message,
+            'notification_type': notification_type,
+            'link': link,
+        })
+        return True
     except Exception as e:
-        logger.error(f"Failed to send notification: {e}")
+        logger.error(f"Failed to publish notification event: {e}")
         return False

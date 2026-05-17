@@ -339,6 +339,65 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  celery_catalog:
+    build:
+      context: .
+      dockerfile: catalog_service/Dockerfile
+    command: celery -A catalog_project worker -l info
+    env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./catalog_service:/app/catalog_service
+      - ./shared:/app/shared
+      - media_data:/app/catalog_service/media
+    depends_on:
+      redis:
+        condition: service_healthy
+      catalog_service:
+        condition: service_healthy
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  notification_listener:
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile
+    command: python manage.py listen_notifications
+    env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./notification_service:/app/notification_service
+      - ./shared:/app/shared
+    depends_on:
+      redis:
+        condition: service_healthy
+      notification_service:
+        condition: service_healthy
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
 volumes:
   redis_data:
   media_data:

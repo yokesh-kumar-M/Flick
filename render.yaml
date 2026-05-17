@@ -280,6 +280,144 @@ services:
       - key: SUPABASE_KEY
         sync: false
 
+  # ── Background Workers ──
+  # These are required for async work that's published from the web services.
+  # Without them, .delay() calls and event-bus publishes are silently dropped.
+
+  - type: worker
+    name: flick-celery-catalog
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./catalog_service/Dockerfile
+    dockerCommand: celery -A catalog_project worker -l info
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+  - type: worker
+    name: flick-celery-recommendation
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./recommendation_service/Dockerfile
+    dockerCommand: celery -A recommendation_project worker -B -l info
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+  - type: worker
+    name: flick-celery-streaming
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./streaming_service/Dockerfile
+    dockerCommand: celery -A streaming_project worker -l info
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+  - type: worker
+    name: flick-notification-listener
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./notification_service/Dockerfile
+    dockerCommand: python manage.py listen_notifications
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flick-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
 # ──────────────────────────────────────────────────────────────────
 # SCALING HINTS
 # ──────────────────────────────────────────────────────────────────

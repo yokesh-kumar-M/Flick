@@ -16,5 +16,5 @@ RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:${PORT:-8000} gateway_project.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && uvicorn --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} gateway_project.asgi:application"]
 

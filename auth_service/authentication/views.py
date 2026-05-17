@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -54,13 +55,19 @@ def register(request):
     response_data = {
         'message': 'Registration successful',
         'user': UserSerializer(user).data,
-        'access_token': access_token,
-        'refresh_token': refresh_token,
     }
 
     response = Response(response_data, status=status.HTTP_201_CREATED)
-    response.set_cookie('access_token', access_token, httponly=True, samesite='Lax', path='/', max_age=1800)
-    response.set_cookie('refresh_token', refresh_token, httponly=True, samesite='Lax', path='/', max_age=86400)
+    response.set_cookie(
+        'access_token', access_token, 
+        httponly=True, samesite='Lax', path='/', max_age=1800,
+        secure=not settings.DEBUG
+    )
+    response.set_cookie(
+        'refresh_token', refresh_token, 
+        httponly=True, samesite='Lax', path='/', max_age=86400,
+        secure=not settings.DEBUG
+    )
 
     # Welcome notification
     try:
@@ -102,13 +109,19 @@ def login(request):
     response_data = {
         'message': 'Login successful',
         'user': UserSerializer(user).data,
-        'access_token': access_token,
-        'refresh_token': refresh_token,
     }
 
     response = Response(response_data, status=status.HTTP_200_OK)
-    response.set_cookie('access_token', access_token, httponly=True, samesite='Lax', path='/', max_age=1800)
-    response.set_cookie('refresh_token', refresh_token, httponly=True, samesite='Lax', path='/', max_age=86400)
+    response.set_cookie(
+        'access_token', access_token, 
+        httponly=True, samesite='Lax', path='/', max_age=1800,
+        secure=not settings.DEBUG
+    )
+    response.set_cookie(
+        'refresh_token', refresh_token, 
+        httponly=True, samesite='Lax', path='/', max_age=86400,
+        secure=not settings.DEBUG
+    )
     return response
 
 
@@ -132,12 +145,17 @@ def refresh_token(request):
     access_token = create_access_token(user.id, user.username, user.is_admin, user.has_super_access)
     new_refresh_token = create_refresh_token(user.id)
 
-    response = Response({
-        'access_token': access_token,
-        'refresh_token': new_refresh_token,
-    })
-    response.set_cookie('access_token', access_token, httponly=True, samesite='Lax', path='/', max_age=1800)
-    response.set_cookie('refresh_token', new_refresh_token, httponly=True, samesite='Lax', path='/', max_age=86400)
+    response = Response({'message': 'Token refreshed successfully'})
+    response.set_cookie(
+        'access_token', access_token, 
+        httponly=True, samesite='Lax', path='/', max_age=1800,
+        secure=not settings.DEBUG
+    )
+    response.set_cookie(
+        'refresh_token', new_refresh_token, 
+        httponly=True, samesite='Lax', path='/', max_age=86400,
+        secure=not settings.DEBUG
+    )
     return response
 
 

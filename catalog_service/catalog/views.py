@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import connection
 from django.db.models import Q, F, Avg, Count
 from .models import Category, Genre, Movie, Review, Playlist
 from .serializers import (
@@ -12,7 +13,8 @@ from .serializers import (
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from shared.jwt_utils import decode_token
-from .search_engine import search_movies_es, sync_movie_to_es
+from .search_engine import search_movies_es
+from .tasks import sync_movie_to_es_task
 
 
 
@@ -259,9 +261,8 @@ def movie_create(request):
 
     movie = serializer.save()
     
-    # Sync to Elasticsearch in background
-    import threading
-    threading.Thread(target=sync_movie_to_es, args=(movie,)).start()
+    # Sync to Elasticsearch in background using Celery
+    sync_movie_to_es_task.delay(movie.id)
     
     return Response(MovieDetailSerializer(movie).data, status=status.HTTP_201_CREATED)
 
@@ -282,6 +283,10 @@ def movie_update(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     movie = serializer.save()
+    
+    # Sync updated movie to ES
+    sync_movie_to_es_task.delay(movie.id)
+    
     return Response(MovieDetailSerializer(movie).data)
 
 
@@ -387,21 +392,36 @@ def search(request):
             'source': 'elasticsearch'
         })
         
-    # Fallback to slow database query if ES fails or is offline
-    movies = Movie.objects.filter(
-        Q(title__icontains=query) |
-        Q(description__icontains=query) |
-        Q(director__icontains=query) |
-        Q(cast__icontains=query) |
-        Q(tags__icontains=query),
-        is_active=True
-    ).distinct()[:30]
+    # Fallback to PostgreSQL FTS when available, otherwise plain icontains
+    # (so dev environments on SQLite still work).
+    if connection.vendor == 'postgresql':
+        from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+        vector = (
+            SearchVector('title', weight='A')
+            + SearchVector('description', weight='B')
+            + SearchVector('director', weight='B')
+            + SearchVector('cast', weight='C')
+            + SearchVector('tags', weight='C')
+        )
+        movies = Movie.objects.annotate(
+            rank=SearchRank(vector, SearchQuery(query))
+        ).filter(rank__gte=0.1, is_active=True).order_by('-rank')[:30]
+    else:
+        movies = Movie.objects.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(director__icontains=query)
+            | Q(cast__icontains=query)
+            | Q(tags__icontains=query),
+            is_active=True,
+        ).distinct()[:30]
 
+    results = MovieListSerializer(movies, many=True).data
     return Response({
-        'results': MovieListSerializer(movies, many=True).data,
+        'results': results,
         'query': query,
-        'total': movies.count() if hasattr(movies, 'count') else len(movies),
-        'source': 'database'
+        'total': len(results),
+        'source': 'database',
     })
 
 # ══════════════════════════════════════

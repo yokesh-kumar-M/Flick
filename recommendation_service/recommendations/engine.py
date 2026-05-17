@@ -79,28 +79,29 @@ class RecommendationEngine:
 
         return results
 
-    def get_collaborative_recommendations(self, user_id, interactions, top_n=10):
+    def get_collaborative_recommendations(self, user_id, interactions=None, user_item=None, top_n=10):
         """
         Simple collaborative filtering using user-item interaction matrix.
         Find users with similar watching patterns and recommend their movies.
         """
         import pandas as pd
 
-        if not interactions:
-            return []
+        if user_item is None:
+            if not interactions:
+                return []
 
-        # Build interaction DataFrame
-        df = pd.DataFrame(interactions)
-        if df.empty or 'user_id' not in df.columns:
-            return []
+            # Build interaction DataFrame
+            df = pd.DataFrame(interactions)
+            if df.empty or 'user_id' not in df.columns:
+                return []
 
-        # Create user-item matrix
-        try:
-            user_item = df.pivot_table(
-                index='user_id', columns='movie_id', values='score', fill_value=0
-            )
-        except Exception:
-            return []
+            # Create user-item matrix
+            try:
+                user_item = df.pivot_table(
+                    index='user_id', columns='movie_id', values='score', fill_value=0
+                )
+            except Exception:
+                return []
 
         if user_id not in user_item.index:
             return []
@@ -151,7 +152,7 @@ class RecommendationEngine:
         scored.sort(key=lambda x: x['score'], reverse=True)
         return scored[:top_n]
 
-    def get_personalized(self, user_id, user_genres, movies, interactions, top_n=15):
+    def get_personalized(self, user_id, user_genres, movies, interactions=None, user_item=None, top_n=15):
         """
         Combined recommendation: content-based + collaborative + trending.
         Weighted combination for personalized feed.
@@ -168,7 +169,7 @@ class RecommendationEngine:
             results[movie['movie_id']] = {'content': content_score, 'collab': 0, 'trend': 0}
 
         # Collaborative
-        collab_recs = self.get_collaborative_recommendations(user_id, interactions)
+        collab_recs = self.get_collaborative_recommendations(user_id, interactions, user_item)
         for rec in collab_recs:
             mid = rec['movie_id']
             if mid in results:
